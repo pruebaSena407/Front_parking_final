@@ -1,8 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" role="img" aria-label="ParkVista">
   <g fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="9" cy="21" r="1"/>
-    <circle cx="20" cy="21" r="1"/>
-    <path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+    <!-- Silueta de auto -->
+    <path d="M3 13l2-5a3 3 0 0 1 2.8-2h6.4a3 3 0 0 1 2.8 2l2 5" />
+    <path d="M3 13h18a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-1" />
+    <path d="M5 18H4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1" />
+    <circle cx="7" cy="19" r="2" />
+    <circle cx="17" cy="19" r="2" />
+    <path d="M7 8h10" />
+    <!-- Señal sutil de 'P' para parqueadero -->
+    <path d="M4 4v5" />
+    <path d="M4 4h3a2 2 0 1 1 0 4H4" />
   </g>
 </svg>
 

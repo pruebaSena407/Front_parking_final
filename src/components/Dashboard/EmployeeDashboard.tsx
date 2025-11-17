@@ -5,6 +5,7 @@ import { Users, Car, DollarSign, TrendingUp, MapPin, Building2 } from "lucide-re
 import { useAuth } from "@/contexts/AuthContext";
 import { ParkingLocationsPanel } from "@/components/Admin/ParkingLocationsPanel";
 import { ParkingRatesPanel } from "@/components/Admin/ParkingRatesPanel";
+import { ReservationsPanel } from "@/components/Admin/ReservationsPanel";
 
 export const EmployeeDashboard = () => {
   const { userRole } = useAuth();
@@ -68,9 +69,10 @@ export const EmployeeDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
           <TabsTrigger value="overview">Vista General</TabsTrigger>
           <TabsTrigger value="clients">Clientes</TabsTrigger>
+          <TabsTrigger value="reservations">Reservas</TabsTrigger>
           {isAdmin && <TabsTrigger value="locations">Ubicaciones</TabsTrigger>}
           {isAdmin && <TabsTrigger value="rates">Tarifas</TabsTrigger>}
         </TabsList>
@@ -225,6 +227,10 @@ export const EmployeeDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="reservations">
+          <ReservationsPanel />
         </TabsContent>
 
         {isAdmin && (

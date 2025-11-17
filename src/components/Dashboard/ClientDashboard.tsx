@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Car, MapPin, CreditCard, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { ReservationsList } from "@/components/Reservations/ReservationsList";
+import { ReservationHistory } from "@/components/Reservations/ReservationHistory";
 
 export const ClientDashboard = () => {
   const { user } = useAuth();
@@ -60,57 +61,15 @@ export const ClientDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Mis Reservas</CardTitle>
-            <CardDescription>Gestiona tus reservas de parqueadero</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">Parqueadero Centro</p>
-                <p className="text-sm text-muted-foreground">Activa - Espacio A-12</p>
-              </div>
-              <Button size="sm">Ver Detalles</Button>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">Parqueadero Norte</p>
-                <p className="text-sm text-muted-foreground">Activa - Espacio B-05</p>
-              </div>
-              <Button size="sm">Ver Detalles</Button>
-            </div>
-            <Button className="w-full" variant="outline">
-              <Car className="mr-2 h-4 w-4" />
-              Nueva Reserva
-            </Button>
-          </CardContent>
-        </Card>
+        <ReservationsList />
 
         <Card>
           <CardHeader>
-            <CardTitle>Historial de Pagos</CardTitle>
-            <CardDescription>Últimas transacciones realizadas</CardDescription>
+            <CardTitle>Historial de Reservas</CardTitle>
+            <CardDescription>Reservas anteriores y canceladas</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">$25.000</p>
-                <p className="text-sm text-muted-foreground">15 Nov 2025 - Mensualidad</p>
-              </div>
-              <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">Pagado</span>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="font-medium">$25.000</p>
-                <p className="text-sm text-muted-foreground">15 Oct 2025 - Mensualidad</p>
-              </div>
-              <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">Pagado</span>
-            </div>
-            <Button className="w-full" variant="outline">
-              <CreditCard className="mr-2 h-4 w-4" />
-              Ver Todos los Pagos
-            </Button>
+            <ReservationHistory />
           </CardContent>
         </Card>
       </div>

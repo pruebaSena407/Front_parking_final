@@ -59,6 +59,48 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          id: string
+          user_id: string
+          location_name: string
+          space_code: string | null
+          start_time: string
+          end_time: string
+          status: Database["public"]["Enums"]["reservation_status"]
+          amount: number | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          location_name: string
+          space_code?: string | null
+          start_time: string
+          end_time: string
+          status?: Database["public"]["Enums"]["reservation_status"]
+          amount?: number | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          location_name?: string
+          space_code?: string | null
+          start_time?: string
+          end_time?: string
+          status?: Database["public"]["Enums"]["reservation_status"]
+          amount?: number | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -78,6 +120,7 @@ export type Database = {
     }
     Enums: {
       app_role: "cliente" | "empleado" | "admin"
+      reservation_status: "activa" | "cancelada" | "completada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -206,6 +249,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["cliente", "empleado", "admin"],
+      reservation_status: ["activa", "cancelada", "completada"],
     },
   },
 } as const

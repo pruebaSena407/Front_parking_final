@@ -5,6 +5,7 @@ interface AccessibilityOptions {
 	dyslexiaFont: boolean;
 	underlineLinks: boolean;
 	extraSpacing: boolean;
+	compactMobile: boolean;
 }
 
 interface AccessibilityContextType extends AccessibilityOptions {
@@ -43,6 +44,7 @@ export const AccessibilityProvider = ({ children }: { children: React.ReactNode 
 			dyslexiaFont: false,
 			underlineLinks: false,
 			extraSpacing: false,
+			compactMobile: false,
 		};
 	});
 
@@ -62,6 +64,8 @@ export const AccessibilityProvider = ({ children }: { children: React.ReactNode 
 		cls.toggle("a11y-dyslexia", isEnabled && options.dyslexiaFont);
 		cls.toggle("a11y-underline", isEnabled && options.underlineLinks);
 		cls.toggle("a11y-spacing", isEnabled && options.extraSpacing);
+		// compactMobile no depende del modo a11y; es una preferencia independiente
+		cls.toggle("compact-mobile", options.compactMobile);
 	}, [options, isEnabled]);
 
 	const value = useMemo<AccessibilityContextType>(() => {
@@ -74,6 +78,7 @@ export const AccessibilityProvider = ({ children }: { children: React.ReactNode 
 			dyslexiaFont: options.dyslexiaFont,
 			underlineLinks: options.underlineLinks,
 			extraSpacing: options.extraSpacing,
+			compactMobile: options.compactMobile,
 			setOption: (key, value) =>
 				setOptions((prev) => ({
 					...prev,

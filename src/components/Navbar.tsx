@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Car, Menu, X, BarChart3, Settings, LogOut, User, Accessibility } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import {
@@ -17,10 +17,22 @@ import {
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, userRole, signOut } = useAuth();
+  const location = useLocation();
   const { 
     isEnabled: a11yEnabled, toggle: toggleA11y, enable: enableA11y,
-    highContrast, dyslexiaFont, underlineLinks, extraSpacing, setOption
+    highContrast, dyslexiaFont, underlineLinks, extraSpacing, compactMobile, setOption
   } = useAccessibility();
+
+  const handleInPageNav = (e: React.MouseEvent, id: string) => {
+    if (location.pathname === "/") {
+      e.preventDefault();
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        setIsMenuOpen(false);
+      }
+    }
+  };
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
@@ -39,16 +51,16 @@ const Navbar = () => {
           <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
             {!user && (
               <>
-                <Link to="/#features" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
+                <Link to="/#features" onClick={(e) => handleInPageNav(e, "features")} className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
                   Características
                 </Link>
-                <Link to="/#tariffs" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
+                <Link to="/#tariffs" onClick={(e) => handleInPageNav(e, "tariffs")} className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
                   Tarifas
                 </Link>
-                <Link to="/#locations" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
+                <Link to="/#locations" onClick={(e) => handleInPageNav(e, "locations")} className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
                   Ubicaciones
                 </Link>
-                <Link to="/#contact" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
+                <Link to="/#contact" onClick={(e) => handleInPageNav(e, "contact")} className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
                   Contacto
                 </Link>
               </>
@@ -155,6 +167,13 @@ const Navbar = () => {
                 >
                   Espaciado extra
                 </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={compactMobile}
+                  onCheckedChange={(v) => { setOption("compactMobile", Boolean(v)); }}
+                >
+                  Modo compacto (móvil)
+                </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -174,31 +193,31 @@ const Navbar = () => {
           <div className="pt-2 pb-3 space-y-1">
             {!user ? (
               <>
-                <Link 
-                  to="/#features" 
+                    <Link 
+                      to="/#features" 
+                      onClick={(e) => { handleInPageNav(e, "features"); setIsMenuOpen(false); }}
                   className="block pl-3 pr-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
-                  onClick={() => setIsMenuOpen(false)}
                 >
                   Características
                 </Link>
-                <Link 
-                  to="/#tariffs" 
+                    <Link 
+                      to="/#tariffs" 
+                      onClick={(e) => { handleInPageNav(e, "tariffs"); setIsMenuOpen(false); }}
                   className="block pl-3 pr-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
-                  onClick={() => setIsMenuOpen(false)}
                 >
                   Tarifas
                 </Link>
-                <Link 
-                  to="/#locations" 
+                    <Link 
+                      to="/#locations" 
+                      onClick={(e) => { handleInPageNav(e, "locations"); setIsMenuOpen(false); }}
                   className="block pl-3 pr-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
-                  onClick={() => setIsMenuOpen(false)}
                 >
                   Ubicaciones
                 </Link>
-                <Link 
-                  to="/#contact" 
+                    <Link 
+                      to="/#contact" 
+                      onClick={(e) => { handleInPageNav(e, "contact"); setIsMenuOpen(false); }}
                   className="block pl-3 pr-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
-                  onClick={() => setIsMenuOpen(false)}
                 >
                   Contacto
                 </Link>

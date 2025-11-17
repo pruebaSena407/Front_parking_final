@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Car, Clock, MapPin } from "lucide-react";
 
 const Hero = () => {
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="relative overflow-hidden">
       <div className="hero-gradient absolute inset-0 z-0"></div>
@@ -15,11 +20,11 @@ const Hero = () => {
             <p className="mt-6 text-xl text-white/90 max-w-2xl">
               Revisa disponibilidad en tiempo real, tarifas y ubicaciones con nuestra aplicación de gestión de parqueaderos.
             </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Button size="lg" className="bg-white text-primary hover:bg-gray-100">
+            <div className="mt-10 flex flex-col sm:flex-row flex-wrap gap-4">
+              <Button size="lg" className="bg-white text-primary hover:bg-gray-100 w-full sm:w-auto" onClick={() => scrollTo("locations")}>
                 Buscar Parqueadero
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 w-full sm:w-auto" onClick={() => scrollTo("tariffs")}>
                 Ver Tarifas
               </Button>
             </div>

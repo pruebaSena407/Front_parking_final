@@ -109,6 +109,7 @@ export function ReservationsList() {
         ) : activeReservations.length === 0 ? (
           <div className="text-sm text-muted-foreground py-8 text-center">No tienes reservas activas.</div>
         ) : (
+          <>
           <div className="rounded-md border overflow-x-auto hidden sm:block">
             <Table>
               <TableHeader>
@@ -142,7 +143,7 @@ export function ReservationsList() {
               </TableBody>
             </Table>
           </div>
-          /* Card view en móvil */
+          {/* Card view en móvil */}
           <div className="sm:hidden space-y-3">
             {activeReservations.map(r => (
               <div key={r.id} className="border rounded-md p-3">
@@ -161,6 +162,7 @@ export function ReservationsList() {
               </div>
             ))}
           </div>
+          </>
         )}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-md">

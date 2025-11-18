@@ -43,17 +43,17 @@ export function ReservationHistory() {
                 <TableRow>
                   <TableHead>Ubicación</TableHead>
                   <TableHead>Inicio</TableHead>
-                  <TableHead>Fin</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead className="hidden md:table-cell">Fin</TableHead>
+                  <TableHead className="hidden sm:table-cell">Estado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {history.map(r => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.location_name}</TableCell>
-                    <TableCell>{new Date(r.start_time).toLocaleString()}</TableCell>
-                    <TableCell>{new Date(r.end_time).toLocaleString()}</TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(r.start_time).toLocaleString()}</TableCell>
+                    <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">{new Date(r.end_time).toLocaleString()}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <span className="text-xs px-2 py-1 rounded-full bg-muted">
                         {r.status}
                       </span>

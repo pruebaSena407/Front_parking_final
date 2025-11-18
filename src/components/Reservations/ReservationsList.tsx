@@ -114,9 +114,9 @@ export function ReservationsList() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ubicación</TableHead>
-                  <TableHead>Espacio</TableHead>
+                  <TableHead className="hidden sm:table-cell">Espacio</TableHead>
                   <TableHead>Inicio</TableHead>
-                  <TableHead>Fin</TableHead>
+                  <TableHead className="hidden md:table-cell">Fin</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -124,15 +124,15 @@ export function ReservationsList() {
                 {activeReservations.map(r => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.location_name}</TableCell>
-                    <TableCell>{r.space_code ?? "-"}</TableCell>
-                    <TableCell>{new Date(r.start_time).toLocaleString()}</TableCell>
-                    <TableCell>{new Date(r.end_time).toLocaleString()}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{r.space_code ?? "-"}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(r.start_time).toLocaleString()}</TableCell>
+                    <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">{new Date(r.end_time).toLocaleString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button size="icon" variant="outline" onClick={() => openEdit(r)}>
+                        <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => openEdit(r)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="outline" onClick={() => handleCancel(r.id)}>
+                        <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => handleCancel(r.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>

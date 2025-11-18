@@ -94,6 +94,7 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   body {
@@ -195,6 +196,14 @@ body.a11y-spacing {
   body.compact-mobile {
     font-size: 15px; /* reduce base rem para compactar tipografía y spacing tailwind */
     line-height: 1.5;
+  }
+  /* Evita zoom en inputs iOS y mejora legibilidad en móvil */
+  input, select, textarea, button {
+    font-size: 16px;
+  }
+  img, svg, canvas, video {
+    max-width: 100%;
+    height: auto;
   }
   body.compact-mobile .card-hover {
     /* menos elevación en móvil compacto */

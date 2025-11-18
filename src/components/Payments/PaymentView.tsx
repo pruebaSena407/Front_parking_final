@@ -296,7 +296,7 @@ export function PaymentView() {
                           />
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="cardExpiry">Fecha de Expiración</Label>
                             <Input
@@ -382,16 +382,16 @@ export function PaymentView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+                <div className="rounded-md border">
                 <div className="relative w-full overflow-auto">
                   <table className="w-full caption-bottom text-sm">
                     <thead className="[&_tr]:border-b">
                       <tr className="border-b transition-colors bg-muted/50">
                         <th className="p-4 text-left font-medium">Fecha</th>
                         <th className="p-4 text-left font-medium">Monto</th>
-                        <th className="p-4 text-left font-medium">Método</th>
-                        <th className="p-4 text-left font-medium">Ubicación</th>
-                        <th className="p-4 text-left font-medium">Referencia</th>
+                          <th className="p-4 text-left font-medium">Método</th>
+                          <th className="p-4 text-left font-medium hidden md:table-cell">Ubicación</th>
+                          <th className="p-4 text-left font-medium hidden lg:table-cell">Referencia</th>
                         <th className="p-4 text-left font-medium">Estado</th>
                       </tr>
                     </thead>
@@ -407,11 +407,11 @@ export function PaymentView() {
                           <td className="p-4 align-middle">
                             <div className="flex items-center">
                               {getPaymentMethodIcon(payment.paymentMethod)}
-                              <span className="ml-2">{getPaymentMethodLabel(payment.paymentMethod)}</span>
+                                <span className="ml-2 hidden xs:inline">{getPaymentMethodLabel(payment.paymentMethod)}</span>
                             </div>
                           </td>
-                          <td className="p-4 align-middle">{payment.location}</td>
-                          <td className="p-4 align-middle">{payment.reference}</td>
+                            <td className="p-4 align-middle hidden md:table-cell">{payment.location}</td>
+                            <td className="p-4 align-middle hidden lg:table-cell">{payment.reference}</td>
                           <td className="p-4 align-middle">
                             {getStatusBadge(payment.status)}
                           </td>

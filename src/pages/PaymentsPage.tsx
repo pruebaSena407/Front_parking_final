@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { PaymentView } from "@/components/Payments/PaymentView";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const PaymentsPage = () => {
   return (
@@ -19,6 +20,7 @@ const PaymentsPage = () => {
       </div>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

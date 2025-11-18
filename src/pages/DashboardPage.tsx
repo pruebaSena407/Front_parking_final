@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import { ClientDashboard } from "@/components/Dashboard/ClientDashboard";
 import { EmployeeDashboard } from "@/components/Dashboard/EmployeeDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const DashboardPage = () => {
   const { user, userRole, loading } = useAuth();
@@ -48,6 +49,7 @@ const DashboardPage = () => {
       </div>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

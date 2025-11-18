@@ -169,7 +169,7 @@ export function PaymentView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              <form id="payment-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
@@ -353,7 +353,7 @@ export function PaymentView() {
                   </div>
                 </div>
                 
-                <div className="flex justify-end">
+                <div className="hidden md:flex justify-end">
                   <Button type="submit" size="lg">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Procesar Pago
@@ -361,6 +361,16 @@ export function PaymentView() {
                 </div>
               </form>
             </CardContent>
+            {/* CTA sticky sólo móvil */}
+            <div
+              className="md:hidden sticky bottom-0 bg-white border-t p-3 flex justify-end"
+              style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+            >
+              <Button type="submit" size="lg" form="payment-form" className="w-full">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Procesar Pago
+              </Button>
+            </div>
             <CardFooter className="flex justify-between border-t pt-6">
               <p className="text-sm text-gray-500">
                 Todos los pagos son procesados de forma segura

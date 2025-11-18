@@ -48,7 +48,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop navigation */}
-          <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+          <div className="hidden md:ml-6 md:flex md:space-x-8">
             {!user && (
               <>
                 <Link to="/#features" onClick={(e) => handleInPageNav(e, "features")} className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-700 hover:text-primary">
@@ -99,7 +99,7 @@ const Navbar = () => {
             )}
           </div>
 
-          <div className="hidden sm:flex items-center">
+          <div className="hidden md:flex items-center">
             {!user ? (
               <>
                 <Link to="/auth">
@@ -179,7 +179,7 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="sm:hidden flex items-center ml-auto">
+          <div className="md:hidden flex items-center ml-auto">
             <Button variant="ghost" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Abrir menú">
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -189,7 +189,7 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="sm:hidden">
+        <div className="md:hidden">
           <div className="pt-2 pb-3 space-y-1">
             {!user ? (
               <>

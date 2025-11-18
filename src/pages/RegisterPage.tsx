@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { FrequentUserForm } from "@/components/FrequentUser/FrequentUserForm";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const RegisterPage = () => {
   return (
@@ -19,6 +20,7 @@ const RegisterPage = () => {
       </div>
 
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

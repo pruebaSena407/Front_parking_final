@@ -99,7 +99,7 @@ export function ReservationsList() {
             <Car className="h-5 w-5 text-muted-foreground" />
             <h3 className="font-semibold">Mis Reservas Activas</h3>
           </div>
-          <Button onClick={openCreate}>
+          <Button onClick={openCreate} className="hidden md:inline-flex">
             <Plus className="h-4 w-4 mr-2" />
             Nueva Reserva
           </Button>
@@ -109,7 +109,7 @@ export function ReservationsList() {
         ) : activeReservations.length === 0 ? (
           <div className="text-sm text-muted-foreground py-8 text-center">No tienes reservas activas.</div>
         ) : (
-          <div className="rounded-md border overflow-x-auto">
+          <div className="rounded-md border overflow-x-auto hidden sm:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -142,6 +142,25 @@ export function ReservationsList() {
               </TableBody>
             </Table>
           </div>
+          /* Card view en móvil */
+          <div className="sm:hidden space-y-3">
+            {activeReservations.map(r => (
+              <div key={r.id} className="border rounded-md p-3">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">{r.location_name}</div>
+                  <div className="text-xs text-muted-foreground">{r.space_code ?? "-"}</div>
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  <div>Inicio: {new Date(r.start_time).toLocaleString()}</div>
+                  <div>Fin: {new Date(r.end_time).toLocaleString()}</div>
+                </div>
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(r)}>Editar</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleCancel(r.id)}>Cancelar</Button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-md">
@@ -156,6 +175,14 @@ export function ReservationsList() {
           </DialogContent>
         </Dialog>
       </CardContent>
+      {/* FAB móvil para crear reserva */}
+      <Button
+        className="md:hidden fixed bottom-20 right-5 rounded-full h-12 w-12 shadow-lg"
+        onClick={openCreate}
+        aria-label="Nueva reserva"
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
     </Card>
   );
 }

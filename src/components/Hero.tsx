@@ -24,7 +24,7 @@ const Hero = () => {
               <Button size="lg" className="bg-white text-primary hover:bg-gray-100 w-full sm:w-auto" onClick={() => scrollTo("locations")}>
                 Buscar Parqueadero
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 w-full sm:w-auto" onClick={() => scrollTo("tariffs")}>
+              <Button size="lg" className="bg-white text-primary hover:bg-gray-100 w-full sm:w-auto" onClick={() => scrollTo("tariffs")}>
                 Ver Tarifas
               </Button>
             </div>

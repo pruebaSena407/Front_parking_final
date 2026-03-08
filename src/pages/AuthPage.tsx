@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Home } from "lucide-react";
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -151,6 +151,14 @@ const AuthPage = () => {
         <title>Iniciar Sesión | ParkVista</title>
         <meta name="description" content="Inicia sesión o regístrate en ParkVista" />
       </Helmet>
+
+      <Link
+        to="/"
+        className="absolute top-4 left-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Home className="h-4 w-4" />
+        Ir al inicio
+      </Link>
 
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">

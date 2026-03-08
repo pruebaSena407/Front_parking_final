@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 type UserRole = "cliente" | "empleado" | "admin" | null;
 
@@ -11,6 +11,8 @@ interface AuthContextType {
   userRole: UserRole;
   loading: boolean;
   signOut: () => Promise<void>;
+  /** Establece sesión mock (localStorage + estado) para que el dashboard no quede en blanco tras login */
+  loginWithMock: (data: { email: string; role: UserRole }) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   userRole: null,
   loading: true,
   signOut: async () => {},
+  loginWithMock: () => {},
 });
 
 export const useAuth = () => {
@@ -35,6 +38,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const FRONT_ONLY =
     (import.meta as any).env?.VITE_FRONT_ONLY === "true" ||
@@ -55,6 +59,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return false;
     }
   };
+
+  // Revisar mockAuth al cambiar de ruta (p. ej. tras login en AuthPage)
+  useEffect(() => {
+    if (FRONT_ONLY) {
+      applyMockAuthIfPresent();
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     // Modo solo-front: evita cualquier integración con Supabase
@@ -139,8 +150,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     navigate("/auth");
   };
 
+  const loginWithMock = (data: { email: string; role: UserRole }) => {
+    localStorage.setItem("mockAuth", JSON.stringify({ email: data.email, role: data.role }));
+    setUser({ id: "mock-user", email: data.email } as unknown as User);
+    setSession({} as unknown as Session);
+    setUserRole(data.role);
+    setLoading(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, userRole, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, userRole, loading, signOut, loginWithMock }}>
       {children}
     </AuthContext.Provider>
   );

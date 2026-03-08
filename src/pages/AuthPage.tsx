@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import { Mail, Lock, User } from "lucide-react";
 const AuthPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { loginWithMock } = useAuth();
   const [loading, setLoading] = useState(false);
   const FRONT_ONLY =
     (import.meta as any).env?.VITE_FRONT_ONLY === "true" ||
@@ -51,7 +53,7 @@ const AuthPage = () => {
 
     if (FRONT_ONLY) {
       // Simula registro exitoso en modo solo-front
-      localStorage.setItem("mockAuth", JSON.stringify({ email, role: "cliente" }));
+      loginWithMock({ email, role: "cliente" });
       setLoading(false);
       toast({ title: "¡Cuenta creada!", description: "Modo demo sin backend." });
       navigate("/dashboard");
@@ -101,7 +103,7 @@ const AuthPage = () => {
     ] as const;
     const match = hardcoded.find((c) => c.email === email && c.password === password);
     if (match) {
-      localStorage.setItem("mockAuth", JSON.stringify({ email: match.email, role: match.role }));
+      loginWithMock({ email: match.email, role: match.role });
       setLoading(false);
       toast({
         title: "¡Bienvenido!",

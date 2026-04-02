@@ -18,6 +18,11 @@ dist-ssr
 .idea
 .DS_Store
 *.suo
+
+# Python virtual environment
+venv/
+env/
+ENV/
 *.ntvs*
 *.njsproj
 *.sln

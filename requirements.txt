@@ -1,16 +1,4 @@
-# Requisitos del proyecto ParkVista
-# Este archivo contiene las dependencias de Python necesarias
-
-# Para desarrollo web (si se necesita)
-flask==2.3.3
-flask-cors==4.0.0
-
-# Para bases de datos
-psycopg2-binary==2.9.7
-
-# Para desarrollo y testing
-pytest==7.4.0
-python-dotenv==1.0.0
-
-# Utilidades
-requests==2.31.0
+# Este proyecto es un frontend con Vite + React.
+# No se necesitan dependencias Python para build en Vercel,
+# porque la parte backend está en Supabase.
+# Deja vacío o elimina este archivo si no tienes un backend Python.

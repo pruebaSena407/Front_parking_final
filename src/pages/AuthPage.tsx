@@ -60,7 +60,7 @@ const AuthPage = () => {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -71,21 +71,44 @@ const AuthPage = () => {
       },
     });
 
-    setLoading(false);
-
     if (error) {
+      setLoading(false);
       toast({
         title: "Error al registrarse",
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "¡Cuenta creada!",
-        description: "Tu cuenta ha sido creada exitosamente.",
-      });
-      navigate("/dashboard");
+      return;
     }
+
+    const userId = signUpData?.user?.id;
+    if (userId) {
+      const role: "cliente" = "cliente";
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: userId,
+        full_name: fullName,
+      });
+
+      if (profileError) {
+        console.error("Error creando profile:", profileError);
+      }
+
+      const { error: roleError } = await supabase.from("user_roles").insert({
+        user_id: userId,
+        role,
+      });
+
+      if (roleError) {
+        console.error("Error creando user_role:", roleError);
+      }
+    }
+
+    setLoading(false);
+    toast({
+      title: "¡Cuenta creada!",
+      description: "Tu cuenta ha sido creada exitosamente.",
+    });
+    navigate("/dashboard");
   };
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Car, Edit, Trash2, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { cancelReservation, createReservation, listMyReservations, updateReservation, type Reservation } from "@/integrations/supabase/reservations";
+import { cancelReservation, createReservation, listMyReservations, updateReservation, type Reservation } from "@/lib/reservations";
 import { ReservationForm } from "./ReservationForm";
 import { useToast } from "@/hooks/use-toast";
 

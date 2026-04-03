@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,7 @@ const AuthPage = () => {
   const { toast } = useToast();
   const { login, loginWithMock } = useAuth();
   const [loading, setLoading] = useState(false);
+  const signupFormRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem("mockAuth");
@@ -26,7 +27,12 @@ const AuthPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    const formEl = signupFormRef.current;
+    if (!formEl) {
+      setLoading(false);
+      return;
+    }
+    const formData = new FormData(formEl);
     const email = String(formData.get("signup-email") || "");
     const fullName = String(formData.get("full-name") || "");
     const password = String(formData.get("signup-password") || "");
@@ -59,8 +65,7 @@ const AuthPage = () => {
         description: "Tu cuenta ha sido creada correctamente. Por favor inicia sesión."
       });
       
-      // Limpiar formulario y cambiar a login
-      (e.currentTarget as HTMLFormElement).reset();
+      signupFormRef.current?.reset();
       setLoading(false);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error al registrarse";
@@ -164,7 +169,7 @@ const AuthPage = () => {
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
+              <form ref={signupFormRef} onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="full-name">Nombre Completo</Label>
                   <div className="relative">

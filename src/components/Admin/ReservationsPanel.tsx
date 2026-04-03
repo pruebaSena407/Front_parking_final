@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Edit, Trash2, ListChecks } from "lucide-react";
-import { listAllReservations, updateReservation, deleteReservation, type Reservation } from "@/integrations/supabase/reservations";
+import { listAllReservations, updateReservation, deleteReservation, type Reservation } from "@/lib/reservations";
 import { ReservationForm } from "@/components/Reservations/ReservationForm";
 import { useToast } from "@/hooks/use-toast";
 

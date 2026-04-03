@@ -1,8 +1,30 @@
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+/** Reservas en localStorage; sustituir por llamadas a la API Flask cuando conectes el módulo a PostgreSQL. */
 
-type Reservation = Tables<"reservations">;
-type ReservationInsert = TablesInsert<"reservations">;
-type ReservationUpdate = TablesUpdate<"reservations">;
+export type ReservationStatus = "activa" | "cancelada" | "completada";
+
+export type Reservation = {
+  id: string;
+  user_id: string;
+  location_name: string;
+  space_code: string | null;
+  start_time: string;
+  end_time: string;
+  status: ReservationStatus;
+  amount: number | null;
+  notes: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+type ReservationInsert = Omit<Reservation, "id" | "created_at" | "updated_at"> & {
+  id?: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type ReservationUpdate = Partial<
+  Omit<Reservation, "id" | "user_id" | "created_at">
+> & { updated_at?: string | null };
 
 const MOCK_KEY = "mockReservations";
 
@@ -16,7 +38,7 @@ function writeMock(data: Reservation[]) {
 }
 
 function generateUuid() {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
@@ -37,7 +59,7 @@ function ensureSeed(userId?: string) {
       space_code: "A-12",
       start_time: now.toISOString(),
       end_time: later.toISOString(),
-      status: "activa" as Reservation["status"],
+      status: "activa",
       amount: 8000,
       notes: "Reserva inicial",
       created_at: now.toISOString(),
@@ -58,7 +80,9 @@ export async function listAllReservations(): Promise<Reservation[]> {
   return readMock().sort((a, b) => (a.start_time < b.start_time ? 1 : -1));
 }
 
-export async function createReservation(input: Omit<ReservationInsert, "id" | "created_at" | "updated_at">): Promise<Reservation> {
+export async function createReservation(
+  input: Omit<ReservationInsert, "id" | "created_at" | "updated_at">
+): Promise<Reservation> {
   const now = new Date().toISOString();
   const newItem: Reservation = {
     id: generateUuid(),
@@ -70,7 +94,7 @@ export async function createReservation(input: Omit<ReservationInsert, "id" | "c
     notes: input.notes ?? null,
     space_code: input.space_code ?? null,
     start_time: input.start_time,
-    status: (input.status as any) ?? "activa",
+    status: (input.status as ReservationStatus) ?? "activa",
     user_id: input.user_id,
   };
 
@@ -84,21 +108,21 @@ export async function updateReservation(id: string, updates: ReservationUpdate):
   const data = readMock();
   const idx = data.findIndex((r) => r.id === id);
   if (idx === -1) throw new Error("Reserva no encontrada");
-  const updated = { ...data[idx], ...updates, updated_at: new Date().toISOString() };
+  const updated: Reservation = {
+    ...data[idx],
+    ...updates,
+    updated_at: new Date().toISOString(),
+  };
   data[idx] = updated;
   writeMock(data);
   return updated;
 }
 
 export async function cancelReservation(id: string): Promise<Reservation> {
-  return updateReservation(id, { status: "cancelada" } as ReservationUpdate);
+  return updateReservation(id, { status: "cancelada" });
 }
 
 export async function deleteReservation(id: string): Promise<void> {
   const filtered = readMock().filter((r) => r.id !== id);
   writeMock(filtered);
 }
-
-export type { Reservation };
-
-

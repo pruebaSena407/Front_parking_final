@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import type { Reservation } from "@/integrations/supabase/reservations";
+import type { Reservation } from "@/lib/reservations";
 
 type FormData = {
   location_name: string;

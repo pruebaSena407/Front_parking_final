@@ -1,4 +1,2 @@
-# Este proyecto es un frontend con Vite + React.
-# No se necesitan dependencias Python para build en Vercel,
-# porque la parte backend está en Supabase.
-# Deja vacío o elimina este archivo si no tienes un backend Python.
+# Frontend Vite + React: no hay dependencias Python en este directorio.
+# El backend vive en Back_parking_final (Flask + PostgreSQL).

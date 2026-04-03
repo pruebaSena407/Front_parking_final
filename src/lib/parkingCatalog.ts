@@ -1,5 +1,4 @@
-// Catálogo mock de ubicaciones, espacios y tarifas para el módulo de reservas.
-// Se persiste en localStorage para que sea editable si luego se conecta con paneles de admin.
+// Catálogo mock de ubicaciones, espacios y tarifas para el módulo de reservas (localStorage).
 
 export type VehicleType = "car" | "motorcycle" | "bicycle" | "truck";
 
@@ -32,7 +31,7 @@ const S_KEY = "mockSpaces";
 const R_KEY = "mockRates";
 
 function uuid() {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
@@ -85,12 +84,10 @@ export async function listLocations(): Promise<ParkingLocation[]> {
 
 export async function listSpaces(locationId: string): Promise<ParkingSpace[]> {
   ensureSeed();
-  return read<ParkingSpace>(S_KEY).filter(s => s.locationId === locationId);
+  return read<ParkingSpace>(S_KEY).filter((s) => s.locationId === locationId);
 }
 
 export async function listRates(): Promise<ParkingRate[]> {
   ensureSeed();
   return read<ParkingRate>(R_KEY);
 }
-
-

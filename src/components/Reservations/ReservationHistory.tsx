@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
-import { listMyReservations, type Reservation } from "@/integrations/supabase/reservations";
+import { listMyReservations, type Reservation } from "@/lib/reservations";
 
 export function ReservationHistory() {
   const { user } = useAuth();

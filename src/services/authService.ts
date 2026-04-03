@@ -6,7 +6,9 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  id: string;
+  /** El backend envía id_usuario; el front expone también id para la UI */
+  id?: string;
+  id_usuario?: string;
   correo: string;
   nombre: string;
   apellido: string;
@@ -36,8 +38,9 @@ class AuthService {
       localStorage.setItem('token', token);
       response.token = token;
     }
-    
-    return response;
+
+    const id = response.id_usuario || response.id || '';
+    return { ...response, id };
   }
 
   async register(data: RegisterRequest): Promise<LoginResponse> {
@@ -57,8 +60,9 @@ class AuthService {
       localStorage.setItem('token', token);
       response.token = token;
     }
-    
-    return response;
+
+    const id = response.id_usuario || response.id || '';
+    return { ...response, id };
   }
 
   async logout(): Promise<void> {

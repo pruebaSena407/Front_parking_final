@@ -70,6 +70,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (applyMockAuthIfPresent()) return;
+    // Sin token no hay nada que validar contra el API (evita 401 innecesario)
+    if (!localStorage.getItem("token")) {
+      setLoading(false);
+      return;
+    }
     validateToken();
   }, [location.pathname]);
 

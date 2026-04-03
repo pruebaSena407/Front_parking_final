@@ -55,8 +55,12 @@ async function apiRequest<T>(
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMsg = error.message || `API error: ${response.status}`;
+      const error = await response.json().catch(() => ({})) as {
+        message?: string;
+        error?: string;
+      };
+      const errorMsg =
+        error.error || error.message || `API error: ${response.status}`;
       if (isDev) {
         console.error(`[API] Error:`, errorMsg);
       }

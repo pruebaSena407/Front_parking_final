@@ -9,11 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, Home } from "lucide-react";
+import authService from "@/services/authService";
 
 const AuthPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { loginWithMock } = useAuth();
+  const { login, loginWithMock } = useAuth();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -28,11 +29,48 @@ const AuthPage = () => {
     const formData = new FormData(e.currentTarget);
     const email = String(formData.get("signup-email") || "");
     const fullName = String(formData.get("full-name") || "");
+    const password = String(formData.get("signup-password") || "");
+    const confirmPassword = String(formData.get("confirm-password") || "");
 
-    loginWithMock({ email, role: "cliente" });
-    toast({ title: "¡Cuenta creada!", description: "Modo demo sin backend." });
-    setLoading(false);
-    navigate("/dashboard");
+    if (!email || !fullName || !password || !confirmPassword) {
+      toast({ 
+        title: "Error", 
+        description: "Por favor completa todos los campos.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({ 
+        title: "Error", 
+        description: "Las contraseñas no coinciden.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await authService.register({ email, fullName, password });
+      toast({ 
+        title: "¡Cuenta creada!", 
+        description: "Tu cuenta ha sido creada correctamente. Por favor inicia sesión."
+      });
+      
+      // Limpiar formulario y cambiar a login
+      (e.currentTarget as HTMLFormElement).reset();
+      setLoading(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Error al registrarse";
+      toast({ 
+        title: "Error de registro", 
+        description: errorMessage,
+        variant: "destructive"
+      });
+      setLoading(false);
+    }
   };
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -43,23 +81,36 @@ const AuthPage = () => {
     const email = String(formData.get("signin-email") || "");
     const password = String(formData.get("signin-password") || "");
 
-    const hardcoded = [
-      { email: "admin@parkvista.test", password: "admin123", role: "admin" },
-      { email: "user@parkvista.test", password: "user123", role: "cliente" },
-    ] as const;
-
-    const match = hardcoded.find((c) => c.email === email && c.password === password);
-
-    if (match) {
-      loginWithMock({ email: match.email, role: match.role });
-      toast({ title: "¡Bienvenido!", description: "Has iniciado sesión correctamente." });
+    if (!email || !password) {
+      toast({ 
+        title: "Error", 
+        description: "Por favor completa email y contraseña.",
+        variant: "destructive"
+      });
       setLoading(false);
-      navigate("/dashboard");
       return;
     }
 
-    setLoading(false);
-    toast({ title: "Error", description: "Credenciales inválidas.", variant: "destructive" });
+    try {
+      await login(email, password);
+      toast({ 
+        title: "¡Bienvenido!", 
+        description: "Has iniciado sesión correctamente."
+      });
+      setLoading(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Credenciales inválidas.";
+      toast({ 
+        title: "Error de autenticación", 
+        description: errorMessage,
+        variant: "destructive"
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = () => {
+    loginWithMock({ email: "demo@example.com", role: "cliente" });
   };
 
   return (
@@ -95,17 +146,20 @@ const AuthPage = () => {
                   <Label htmlFor="signin-email">Correo Electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="signin-email" name="signin-email" type="email" placeholder="tu@correo.com" className="pl-10" required />
+                    <Input id="signin-email" name="signin-email" type="email" placeholder="tu@correo.com" className="pl-10" required disabled={loading} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Contraseña</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="signin-password" name="signin-password" type="password" placeholder="••••••••" className="pl-10" required />
+                    <Input id="signin-password" name="signin-password" type="password" placeholder="••••••••" className="pl-10" required disabled={loading} />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>{loading ? "Cargando..." : "Iniciar Sesión"}</Button>
+                <Button type="submit" className="w-full" disabled={loading}>{loading ? "Iniciando..." : "Iniciar Sesión"}</Button>
+                <Button type="button" variant="outline" className="w-full" onClick={handleDemoLogin} disabled={loading}>
+                  Demo Mode
+                </Button>
               </form>
             </TabsContent>
 
@@ -115,24 +169,34 @@ const AuthPage = () => {
                   <Label htmlFor="full-name">Nombre Completo</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="full-name" name="full-name" type="text" placeholder="Juan Pérez" className="pl-10" required />
+                    <Input id="full-name" name="full-name" type="text" placeholder="Juan Pérez" className="pl-10" required disabled={loading} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Correo Electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="signup-email" name="signup-email" type="email" placeholder="tu@correo.com" className="pl-10" required />
+                    <Input id="signup-email" name="signup-email" type="email" placeholder="tu@correo.com" className="pl-10" required disabled={loading} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Contraseña</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="signup-password" name="signup-password" type="password" placeholder="••••••••" className="pl-10" required minLength={6} />
+                    <Input id="signup-password" name="signup-password" type="password" placeholder="••••••••" className="pl-10" required minLength={6} disabled={loading} />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>{loading ? "Cargando..." : "Crear Cuenta"}</Button>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirmar Contraseña</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input id="confirm-password" name="confirm-password" type="password" placeholder="••••••••" className="pl-10" required minLength={6} disabled={loading} />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>{loading ? "Creando cuenta..." : "Crear Cuenta"}</Button>
+                <Button type="button" variant="outline" className="w-full" onClick={handleDemoLogin} disabled={loading}>
+                  Demo Mode
+                </Button>
               </form>
             </TabsContent>
           </Tabs>

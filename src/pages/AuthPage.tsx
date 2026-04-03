@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,30 +15,10 @@ const AuthPage = () => {
   const { toast } = useToast();
   const { loginWithMock } = useAuth();
   const [loading, setLoading] = useState(false);
-  const FRONT_ONLY =
-    (import.meta as any).env?.VITE_FRONT_ONLY === "true" ||
-    !((import.meta as any).env?.VITE_SUPABASE_URL && (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY);
 
-  // Check if already logged in
-  useEffect(() => {
-    if (FRONT_ONLY) {
-      const raw = localStorage.getItem("mockAuth");
-      if (raw) navigate("/dashboard");
-      return;
-    }
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard");
-      }
-    });
-  }, [navigate]);
-
-  // Si existe un login mock, redirige también
   useEffect(() => {
     const raw = localStorage.getItem("mockAuth");
-    if (raw) {
-      navigate("/dashboard");
-    }
+    if (raw) navigate("/dashboard");
   }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -47,67 +26,12 @@ const AuthPage = () => {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("signup-email") as string;
-    const password = formData.get("signup-password") as string;
-    const fullName = formData.get("full-name") as string;
+    const email = String(formData.get("signup-email") || "");
+    const fullName = String(formData.get("full-name") || "");
 
-    if (FRONT_ONLY) {
-      // Simula registro exitoso en modo solo-front
-      loginWithMock({ email, role: "cliente" });
-      setLoading(false);
-      toast({ title: "¡Cuenta creada!", description: "Modo demo sin backend." });
-      navigate("/dashboard");
-      return;
-    }
-
-    const { data: signUpData, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-
-    if (error) {
-      setLoading(false);
-      toast({
-        title: "Error al registrarse",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const userId = signUpData?.user?.id;
-    if (userId) {
-      const role: "cliente" = "cliente";
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: userId,
-        full_name: fullName,
-      });
-
-      if (profileError) {
-        console.error("Error creando profile:", profileError);
-      }
-
-      const { error: roleError } = await supabase.from("user_roles").insert({
-        user_id: userId,
-        role,
-      });
-
-      if (roleError) {
-        console.error("Error creando user_role:", roleError);
-      }
-    }
-
+    loginWithMock({ email, role: "cliente" });
+    toast({ title: "¡Cuenta creada!", description: "Modo demo sin backend." });
     setLoading(false);
-    toast({
-      title: "¡Cuenta creada!",
-      description: "Tu cuenta ha sido creada exitosamente.",
-    });
     navigate("/dashboard");
   };
 
@@ -116,56 +40,26 @@ const AuthPage = () => {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("signin-email") as string;
-    const password = formData.get("signin-password") as string;
+    const email = String(formData.get("signin-email") || "");
+    const password = String(formData.get("signin-password") || "");
 
-    // Credenciales quemadas para pruebas locales
     const hardcoded = [
       { email: "admin@parkvista.test", password: "admin123", role: "admin" },
       { email: "user@parkvista.test", password: "user123", role: "cliente" },
     ] as const;
+
     const match = hardcoded.find((c) => c.email === email && c.password === password);
+
     if (match) {
       loginWithMock({ email: match.email, role: match.role });
+      toast({ title: "¡Bienvenido!", description: "Has iniciado sesión correctamente." });
       setLoading(false);
-      toast({
-        title: "¡Bienvenido!",
-        description: "Has iniciado sesión correctamente.",
-      });
       navigate("/dashboard");
       return;
     }
-
-    if (FRONT_ONLY) {
-      setLoading(false);
-      toast({
-        title: "Credenciales inválidas",
-        description: "Usa las credenciales de demo o regístrate (modo demo).",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
 
     setLoading(false);
-
-    if (error) {
-      toast({
-        title: "Error al iniciar sesión",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "¡Bienvenido!",
-        description: "Has iniciado sesión correctamente.",
-      });
-      navigate("/dashboard");
-    }
+    toast({ title: "Error", description: "Credenciales inválidas.", variant: "destructive" });
   };
 
   return (
@@ -201,33 +95,17 @@ const AuthPage = () => {
                   <Label htmlFor="signin-email">Correo Electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signin-email"
-                      name="signin-email"
-                      type="email"
-                      placeholder="tu@correo.com"
-                      className="pl-10"
-                      required
-                    />
+                    <Input id="signin-email" name="signin-email" type="email" placeholder="tu@correo.com" className="pl-10" required />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Contraseña</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signin-password"
-                      name="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-10"
-                      required
-                    />
+                    <Input id="signin-password" name="signin-password" type="password" placeholder="••••••••" className="pl-10" required />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Cargando..." : "Iniciar Sesión"}
-                </Button>
+                <Button type="submit" className="w-full" disabled={loading}>{loading ? "Cargando..." : "Iniciar Sesión"}</Button>
               </form>
             </TabsContent>
 
@@ -237,48 +115,24 @@ const AuthPage = () => {
                   <Label htmlFor="full-name">Nombre Completo</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="full-name"
-                      name="full-name"
-                      type="text"
-                      placeholder="Juan Pérez"
-                      className="pl-10"
-                      required
-                    />
+                    <Input id="full-name" name="full-name" type="text" placeholder="Juan Pérez" className="pl-10" required />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Correo Electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-email"
-                      name="signup-email"
-                      type="email"
-                      placeholder="tu@correo.com"
-                      className="pl-10"
-                      required
-                    />
+                    <Input id="signup-email" name="signup-email" type="email" placeholder="tu@correo.com" className="pl-10" required />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Contraseña</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-password"
-                      name="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-10"
-                      required
-                      minLength={6}
-                    />
+                    <Input id="signup-password" name="signup-password" type="password" placeholder="••••••••" className="pl-10" required minLength={6} />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Cargando..." : "Crear Cuenta"}
-                </Button>
+                <Button type="submit" className="w-full" disabled={loading}>{loading ? "Cargando..." : "Crear Cuenta"}</Button>
               </form>
             </TabsContent>
           </Tabs>

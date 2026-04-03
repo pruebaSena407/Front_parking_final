@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Users, Shield, User } from "lucide-react";
 
 type UserRole = "cliente" | "empleado" | "admin";
@@ -37,15 +36,13 @@ export function UserManagementPanel() {
     role: "empleado" as UserRole,
   });
 
+  const API_BASE = (import.meta as any).env?.VITE_API_URL || "";
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
 
-      // Check if we're in mock mode
-      const FRONT_ONLY = !((import.meta as any).env?.VITE_SUPABASE_URL && (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY);
-
-      if (FRONT_ONLY) {
-        // Mock data for demo mode
+      if (!API_BASE) {
         setUsers([
           {
             id: "mock-admin",
@@ -65,38 +62,27 @@ export function UserManagementPanel() {
         return;
       }
 
-      // Fetch real users from Supabase
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*");
+      const response = await fetch(`${API_BASE}/api/users`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-      if (profilesError) throw profilesError;
+      if (!response.ok) {
+        throw new Error("Error al obtener usuarios desde el backend");
+      }
 
-      // Fetch roles for each user
-      const usersWithRoles = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          const { data: roleData } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", profile.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
-
-          // Get email from auth.users (this might not work in RLS, but for admin it should)
-          const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
-
-          return {
-            id: profile.id,
-            email: authUser?.user?.email || "N/A",
-            full_name: profile.full_name,
-            role: roleData?.role || "cliente",
-            created_at: profile.created_at,
-          };
-        })
+      const usersData = await response.json();
+      setUsers(
+        usersData.map((item: any) => ({
+          id: item.id_usuario,
+          email: item.email,
+          full_name: item.nombre,
+          role: item.id_rol as UserRole,
+          created_at: item.created_at,
+        }))
       );
-
-      setUsers(usersWithRoles);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast({
@@ -122,10 +108,7 @@ export function UserManagementPanel() {
     try {
       setCreating(true);
 
-      const FRONT_ONLY = !((import.meta as any).env?.VITE_SUPABASE_URL && (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY);
-
-      if (FRONT_ONLY) {
-        // Mock creation
+      if (!API_BASE) {
         const newEmployee: UserProfile = {
           id: `mock-${Date.now()}`,
           email: newUser.email,
@@ -145,49 +128,32 @@ export function UserManagementPanel() {
         return;
       }
 
-      // Real user creation
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          data: {
-            full_name: newUser.fullName,
-          },
+      const response = await fetch(`${API_BASE}/api/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          nombre: newUser.fullName,
+          email: newUser.email,
+          telefono: "",
+          id_rol: newUser.role,
+        }),
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Create user role
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: authData.user.id,
-            role: newUser.role,
-          });
-
-        if (roleError) throw roleError;
-
-        // Create profile
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            id: authData.user.id,
-            full_name: newUser.fullName,
-          });
-
-        if (profileError) throw profileError;
-
-        toast({
-          title: "Empleado creado",
-          description: "El empleado ha sido creado exitosamente",
-        });
-
-        setNewUser({ email: "", password: "", fullName: "", role: "empleado" });
-        setIsCreateDialogOpen(false);
-        fetchUsers(); // Refresh the list
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al crear usuario");
       }
+
+      await fetchUsers();
+      setNewUser({ email: "", password: "", fullName: "", role: "empleado" });
+      setIsCreateDialogOpen(false);
+
+      toast({
+        title: "Empleado creado",
+        description: "El empleado ha sido creado exitosamente",
+      });
     } catch (error: any) {
       console.error("Error creating employee:", error);
       toast({
@@ -204,10 +170,7 @@ export function UserManagementPanel() {
     try {
       setUpdating(userId);
 
-      const FRONT_ONLY = !((import.meta as any).env?.VITE_SUPABASE_URL && (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY);
-
-      if (FRONT_ONLY) {
-        // Mock update
+      if (!API_BASE) {
         setUsers(prev =>
           prev.map(user =>
             user.id === userId ? { ...user, role: newRole } : user
@@ -221,22 +184,24 @@ export function UserManagementPanel() {
         return;
       }
 
-      // Real role update
-      const { error } = await supabase
-        .from("user_roles")
-        .upsert({
-          user_id: userId,
-          role: newRole,
-        });
+      const response = await fetch(`${API_BASE}/api/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id_rol: newRole }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al actualizar rol");
+      }
 
+      await fetchUsers();
       toast({
         title: "Rol actualizado",
         description: "El rol del usuario ha sido actualizado",
       });
-
-      fetchUsers(); // Refresh the list
     } catch (error: any) {
       console.error("Error updating role:", error);
       toast({

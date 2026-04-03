@@ -1,25 +1,29 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
+import authService from "@/services/authService";
 
 type UserRole = "cliente" | "empleado" | "admin" | null;
 
+interface AuthUser {
+  id: string;
+  email: string;
+  role?: UserRole;
+}
+
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   userRole: UserRole;
   loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  /** Establece sesión mock (localStorage + estado) para que el dashboard no quede en blanco tras login */
   loginWithMock: (data: { email: string; role: UserRole }) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  session: null,
   userRole: null,
   loading: true,
+  login: async () => {},
   signOut: async () => {},
   loginWithMock: () => {},
 });
@@ -33,25 +37,18 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-
-  const FRONT_ONLY =
-    (import.meta as any).env?.VITE_FRONT_ONLY === "true" ||
-    !((import.meta as any).env?.VITE_SUPABASE_URL && (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY);
 
   const applyMockAuthIfPresent = (): boolean => {
     const raw = localStorage.getItem("mockAuth");
     if (!raw) return false;
     try {
       const mock = JSON.parse(raw) as { email: string; role: UserRole };
-      // Establece un usuario y sesión ficticia para habilitar la navegación
-      setUser(({ id: "mock-user", email: mock.email } as unknown) as User);
-      setSession(({} as unknown) as Session);
+      setUser({ id: "mock-user", email: mock.email, role: mock.role });
       setUserRole(mock.role);
       setLoading(false);
       return true;
@@ -60,106 +57,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Revisar mockAuth al cambiar de ruta (p. ej. tras login en AuthPage)
-  useEffect(() => {
-    if (FRONT_ONLY) {
-      applyMockAuthIfPresent();
+  const validateToken = async () => {
+    const isValid = await authService.validateToken();
+    if (!isValid) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("mockAuth");
+      setUser(null);
+      setUserRole(null);
     }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (applyMockAuthIfPresent()) return;
+    validateToken();
   }, [location.pathname]);
 
-  useEffect(() => {
-    // Modo solo-front: evita cualquier integración con Supabase
-    if (FRONT_ONLY) {
-      const usedMock = applyMockAuthIfPresent();
-      if (!usedMock) {
-        // Sin mock: usuario no autenticado pero app lista
-        setLoading(false);
-      }
-      return;
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await authService.login({ email, password });
+      setUser({ 
+        id: response.user.id, 
+        email: response.user.email,
+        role: response.user.role
+      });
+      setUserRole(response.user.role as UserRole);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
     }
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Fetch user role asynchronously
-          setTimeout(async () => {
-            const { data: roleData } = await supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", session.user.id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .single();
-            
-            setUserRole(roleData?.role as UserRole ?? null);
-            setLoading(false);
-          }, 0);
-        } else {
-          // Si no hay sesión de Supabase, intenta usar auth mock
-          const usedMock = applyMockAuthIfPresent();
-          if (!usedMock) {
-            setUserRole(null);
-            setLoading(false);
-          }
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        setTimeout(async () => {
-          const { data: roleData } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
-          
-          setUserRole(roleData?.role as UserRole ?? null);
-          setLoading(false);
-        }, 0);
-      } else {
-        // Si no hay sesión previa, intenta aplicar mock; si no, finaliza carga
-        const usedMock = applyMockAuthIfPresent();
-        if (!usedMock) {
-          setLoading(false);
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  };
 
   const signOut = async () => {
-    if (!FRONT_ONLY) {
-      await supabase.auth.signOut();
+    try {
+      await authService.logout();
+      setUser(null);
+      setUserRole(null);
+      navigate("/auth");
+    } catch (error) {
+      console.error("Logout failed:", error);
     }
-    localStorage.removeItem("mockAuth");
-    setUser(null);
-    setSession(null);
-    setUserRole(null);
-    navigate("/auth");
   };
 
   const loginWithMock = (data: { email: string; role: UserRole }) => {
     localStorage.setItem("mockAuth", JSON.stringify({ email: data.email, role: data.role }));
-    setUser({ id: "mock-user", email: data.email } as unknown as User);
-    setSession({} as unknown as Session);
+    setUser({ id: "mock-user", email: data.email, role: data.role });
     setUserRole(data.role);
     setLoading(false);
+    navigate("/dashboard");
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userRole, loading, signOut, loginWithMock }}>
+    <AuthContext.Provider value={{ user, userRole, loading, login, signOut, loginWithMock }}>
       {children}
     </AuthContext.Provider>
   );

@@ -77,11 +77,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response = await authService.login({ email, password });
       setUser({ 
-        id: response.user.id, 
-        email: response.user.email,
-        role: response.user.role
+        id: response.id, 
+        email: response.correo,
+        role: response.id_rol as UserRole
       });
-      setUserRole(response.user.role as UserRole);
+      setUserRole(response.id_rol as UserRole || 'cliente');
       navigate("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);

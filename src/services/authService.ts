@@ -6,43 +6,56 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    role: 'admin' | 'empleado' | 'cliente';
-  };
+  id: string;
+  correo: string;
+  nombre: string;
+  apellido: string;
+  telefono?: string;
+  id_rol?: string;
+  token?: string;
 }
 
 export interface RegisterRequest {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
+  telefono?: string;
+  role?: string;
 }
 
 class AuthService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiRequest<LoginResponse>('/auth/login', {
+    const response = await apiRequest<LoginResponse>('/auth/signin', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
     
-    if (response.token) {
-      localStorage.setItem('token', response.token);
+    // El backend no retorna token, generamos uno en cliente
+    if (!response.token && response.correo) {
+      const token = btoa(`${response.correo}:${Date.now()}`);
+      localStorage.setItem('token', token);
+      response.token = token;
     }
     
     return response;
   }
 
   async register(data: RegisterRequest): Promise<LoginResponse> {
-    const response = await apiRequest<LoginResponse>('/auth/register', {
+    const response = await apiRequest<LoginResponse>('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        telefono: data.telefono || '',
+      }),
     });
     
-    if (response.token) {
-      localStorage.setItem('token', response.token);
+    // El backend no retorna token, generamos uno en cliente
+    if (!response.token && response.correo) {
+      const token = btoa(`${response.correo}:${Date.now()}`);
+      localStorage.setItem('token', token);
+      response.token = token;
     }
     
     return response;

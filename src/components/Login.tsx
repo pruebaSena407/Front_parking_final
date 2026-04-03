@@ -65,14 +65,10 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      const [firstName, ...lastNameParts] = registerName.split(" ");
-      const lastName = lastNameParts.join(" ") || "";
-      
       await authService.register({
         email: registerEmail,
         password: registerPassword,
-        firstName,
-        lastName,
+        fullName: registerName,
       });
       
       toast({

@@ -28,6 +28,15 @@ async function apiRequest<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // DEBUG: Log las llamadas a API en desarrollo
+  const isDev = import.meta.env.DEV;
+  if (isDev) {
+    console.log(`[API] ${fetchOptions.method || 'GET'} ${url}`, {
+      headers,
+      body: fetchOptions.body,
+    });
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -40,14 +49,30 @@ async function apiRequest<T>(
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || `API error: ${response.status}`);
+    // DEBUG: Log respuesta
+    if (isDev) {
+      console.log(`[API] Response: ${response.status}`, response);
     }
 
-    return await response.json();
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      const errorMsg = error.message || `API error: ${response.status}`;
+      if (isDev) {
+        console.error(`[API] Error:`, errorMsg);
+      }
+      throw new Error(errorMsg);
+    }
+
+    const data = await response.json();
+    if (isDev) {
+      console.log(`[API] Data:`, data);
+    }
+    return data;
   } catch (error) {
     clearTimeout(timeoutId);
+    if (isDev) {
+      console.error(`[API] Caught error:`, error);
+    }
     if (error instanceof Error) {
       throw error;
     }

@@ -152,7 +152,7 @@ const Login = () => {
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Correo Electrónico</Label>
-                      <div className="text-sm text-blue-600 font-medium">Correo asociado a tu cuenta</div>
+                      <p className="text-sm text-gray-700 font-semibold">Correo asociado a tu cuenta</p>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 
@@ -174,7 +174,7 @@ const Login = () => {
                           ¿Olvidaste tu contraseña?
                         </a>
                       </div>
-                      <div className="text-sm text-blue-600 font-medium">Tu contraseña de acceso</div>
+                      <p className="text-sm text-gray-700 font-semibold">Tu contraseña de acceso</p>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 
@@ -221,7 +221,7 @@ const Login = () => {
                   <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Nombre Completo</Label>
-                      <div className="text-sm text-blue-600 font-medium">Mínimo 5 caracteres, incluye nombre y apellido</div>
+                      <p className="text-sm text-gray-700 font-semibold">Mínimo 5 caracteres, incluye nombre y apellido</p>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 
@@ -237,7 +237,7 @@ const Login = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="reg-email">Correo Electrónico</Label>
-                      <div className="text-sm text-blue-600 font-medium">Proporciona un correo válido y activo</div>
+                      <p className="text-sm text-gray-700 font-semibold">Proporciona un correo válido y activo</p>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 
@@ -254,7 +254,7 @@ const Login = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="reg-password">Contraseña</Label>
-                      <div className="text-sm text-blue-600 font-medium">Mínimo 8 caracteres: mayúsculas, minúsculas, números y caracteres especiales (!@#$%^&*)</div>
+                      <p className="text-sm text-gray-700 font-semibold">Mínimo 8 caracteres: mayúsculas, minúsculas, números y caracteres especiales (!@#$%^&*)</p>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 
@@ -271,7 +271,7 @@ const Login = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password">Confirmar Contraseña</Label>
-                      <div className="text-sm text-blue-600 font-medium">Debe ser idéntica a la contraseña anterior</div>
+                      <p className="text-sm text-gray-700 font-semibold">Debe ser idéntica a la contraseña anterior</p>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 

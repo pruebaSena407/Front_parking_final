@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, Home } from "lucide-react";
 import authService from "@/services/authService";
@@ -30,10 +31,12 @@ const AuthPage = () => {
     const formData = new FormData(form);
     const email = String(formData.get("signup-email") || "");
     const fullName = String(formData.get("full-name") || "");
+    const countryCode = String(formData.get("country-code") || "");
+    const phone = String(formData.get("phone") || "");
     const password = String(formData.get("signup-password") || "");
     const confirmPassword = String(formData.get("confirm-password") || "");
 
-    if (!email || !fullName || !password || !confirmPassword) {
+    if (!email || !fullName || !phone || !password || !confirmPassword) {
       toast({ 
         title: "Error", 
         description: "Por favor completa todos los campos.",
@@ -61,6 +64,18 @@ const AuthPage = () => {
       toast({ 
         title: "Error", 
         description: "El nombre completo debe incluir nombre y apellido.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Validate phone
+    const phoneRegex = /^\d{10,15}$/;
+    if (!phoneRegex.test(phone)) {
+      toast({ 
+        title: "Error", 
+        description: "El número de teléfono debe contener solo números y tener entre 10 y 15 dígitos.",
         variant: "destructive"
       });
       setLoading(false);
@@ -124,8 +139,10 @@ const AuthPage = () => {
       return;
     }
 
+    const telefono = countryCode + phone;
+
     try {
-      await authService.register({ email, fullName, password });
+      await authService.register({ email, fullName, password, telefono });
       toast({ 
         title: "¡Cuenta creada!", 
         description: "Tu cuenta ha sido creada correctamente. Por favor inicia sesión."
@@ -252,6 +269,32 @@ const AuthPage = () => {
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="signup-email" name="signup-email" type="email" placeholder="tu@correo.com" className="pl-10" required disabled={loading} />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country-code">País</Label>
+                  <Select name="country-code" defaultValue="+57" disabled={loading}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona tu país" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+57">Colombia (+57)</SelectItem>
+                      <SelectItem value="+1">Estados Unidos (+1)</SelectItem>
+                      <SelectItem value="+34">España (+34)</SelectItem>
+                      <SelectItem value="+52">México (+52)</SelectItem>
+                      <SelectItem value="+54">Argentina (+54)</SelectItem>
+                      <SelectItem value="+56">Chile (+56)</SelectItem>
+                      <SelectItem value="+58">Venezuela (+58)</SelectItem>
+                      <SelectItem value="+591">Bolivia (+591)</SelectItem>
+                      <SelectItem value="+593">Ecuador (+593)</SelectItem>
+                      <SelectItem value="+595">Paraguay (+595)</SelectItem>
+                      <SelectItem value="+598">Uruguay (+598)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Número de Teléfono</Label>
+                  <p className="text-sm text-gray-700 font-semibold">Solo números, mínimo 10 dígitos (sin incluir el indicativo)</p>
+                  <Input id="phone" name="phone" type="tel" placeholder="3001234567" required disabled={loading} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Contraseña</Label>

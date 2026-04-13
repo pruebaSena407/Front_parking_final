@@ -27,9 +27,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { User, CreditCard, Car, Clock } from "lucide-react";
 
 const frequentUserSchema = z.object({
-  fullName: z.string().min(5, { message: "El nombre completo debe tener al menos 5 caracteres" }),
+  fullName: z.string()
+    .min(5, { message: "El nombre completo debe tener al menos 5 caracteres" })
+    .refine((name) => name.trim().split(/\s+/).length >= 2, {
+      message: "El nombre completo debe incluir nombre y apellido"
+    })
+    .refine((name) => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(name), {
+      message: "El nombre solo puede contener letras y espacios"
+    }),
   email: z.string().email({ message: "Ingresa un correo electrónico válido" }),
-  phone: z.string().min(10, { message: "Ingresa un número de teléfono válido" }),
+  phone: z.string()
+    .min(10, { message: "Ingresa un número de teléfono válido" })
+    .refine((phone) => /^\d{10,15}$/.test(phone.replace(/\D/g, '')), {
+      message: "El teléfono debe contener solo números y tener entre 10 y 15 dígitos"
+    }),
   documentType: z.enum(["cedula", "pasaporte", "extranjeria"]),
   documentNumber: z.string().min(5, { message: "Ingresa un número de documento válido" }),
   vehicleType: z.enum(["car", "motorcycle", "bicycle", "truck"]),

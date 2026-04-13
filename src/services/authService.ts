@@ -8,7 +8,8 @@ export interface LoginRequest {
 export interface LoginResponse {
   /** El backend envía id_usuario; el front expone también id para la UI */
   id?: string;
-  id_usuario?: string;
+  /** Puede ser número si la BD usa INTEGER */
+  id_usuario?: string | number;
   correo: string;
   nombre: string;
   apellido: string;
@@ -39,7 +40,7 @@ class AuthService {
       response.token = token;
     }
 
-    const id = response.id_usuario || response.id || '';
+    const id = String(response.id_usuario ?? response.id ?? '');
     return { ...response, id };
   }
 
@@ -61,7 +62,7 @@ class AuthService {
       response.token = token;
     }
 
-    const id = response.id_usuario || response.id || '';
+    const id = String(response.id_usuario ?? response.id ?? '');
     return { ...response, id };
   }
 

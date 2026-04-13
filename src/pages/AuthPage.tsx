@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,7 +16,6 @@ const AuthPage = () => {
   const { toast } = useToast();
   const { login, loginWithMock } = useAuth();
   const [loading, setLoading] = useState(false);
-  const signupFormRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem("mockAuth");
@@ -27,12 +26,8 @@ const AuthPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    const formEl = signupFormRef.current;
-    if (!formEl) {
-      setLoading(false);
-      return;
-    }
-    const formData = new FormData(formEl);
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
     const email = String(formData.get("signup-email") || "");
     const fullName = String(formData.get("full-name") || "");
     const password = String(formData.get("signup-password") || "");
@@ -42,6 +37,77 @@ const AuthPage = () => {
       toast({ 
         title: "Error", 
         description: "Por favor completa todos los campos.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({ 
+        title: "Error", 
+        description: "Ingresa un correo electrónico válido.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Validate fullName has at least two words
+    const nameParts = fullName.trim().split(/\s+/);
+    if (nameParts.length < 2) {
+      toast({ 
+        title: "Error", 
+        description: "El nombre completo debe incluir nombre y apellido.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      toast({ 
+        title: "Error", 
+        description: "La contraseña debe tener al menos 8 caracteres.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      toast({ 
+        title: "Error", 
+        description: "La contraseña debe contener al menos una letra mayúscula.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      toast({ 
+        title: "Error", 
+        description: "La contraseña debe contener al menos una letra minúscula.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+    if (!/\d/.test(password)) {
+      toast({ 
+        title: "Error", 
+        description: "La contraseña debe contener al menos un número.",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      toast({ 
+        title: "Error", 
+        description: "La contraseña debe contener al menos un carácter especial.",
         variant: "destructive"
       });
       setLoading(false);
@@ -65,7 +131,8 @@ const AuthPage = () => {
         description: "Tu cuenta ha sido creada correctamente. Por favor inicia sesión."
       });
       
-      signupFormRef.current?.reset();
+      // Limpiar formulario y cambiar a login
+      form.reset();
       setLoading(false);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error al registrarse";
@@ -169,7 +236,7 @@ const AuthPage = () => {
             </TabsContent>
 
             <TabsContent value="signup">
-              <form ref={signupFormRef} onSubmit={handleSignUp} className="space-y-4">
+              <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="full-name">Nombre Completo</Label>
                   <div className="relative">

@@ -239,6 +239,7 @@ const AuthPage = () => {
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="full-name">Nombre Completo</Label>
+                  <p className="text-sm text-gray-700 font-semibold">Mínimo 5 caracteres, incluye nombre y apellido</p>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="full-name" name="full-name" type="text" placeholder="Juan Pérez" className="pl-10" required disabled={loading} />
@@ -246,6 +247,7 @@ const AuthPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Correo Electrónico</Label>
+                  <p className="text-sm text-gray-700 font-semibold">Proporciona un correo válido y activo</p>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="signup-email" name="signup-email" type="email" placeholder="tu@correo.com" className="pl-10" required disabled={loading} />
@@ -253,6 +255,7 @@ const AuthPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Contraseña</Label>
+                  <p className="text-sm text-gray-700 font-semibold">Mínimo 8 caracteres: mayúsculas, minúsculas, números y caracteres especiales (!@#$%^&*)</p>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="signup-password" name="signup-password" type="password" placeholder="••••••••" className="pl-10" required minLength={6} disabled={loading} />
@@ -260,6 +263,7 @@ const AuthPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Confirmar Contraseña</Label>
+                  <p className="text-sm text-gray-700 font-semibold">Debe ser idéntica a la contraseña anterior</p>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input id="confirm-password" name="confirm-password" type="password" placeholder="••••••••" className="pl-10" required minLength={6} disabled={loading} />

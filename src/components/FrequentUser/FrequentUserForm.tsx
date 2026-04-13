@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -120,6 +121,9 @@ export function FrequentUserForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nombre Completo</FormLabel>
+                        <FormDescription>
+                          Mínimo 5 caracteres, incluye nombre y apellido, solo letras
+                        </FormDescription>
                         <FormControl>
                           <Input placeholder="Juan Pérez González" {...field} />
                         </FormControl>
@@ -134,6 +138,9 @@ export function FrequentUserForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Correo Electrónico</FormLabel>
+                        <FormDescription>
+                          Proporciona un correo válido y activo
+                        </FormDescription>
                         <FormControl>
                           <Input type="email" placeholder="juan@example.com" {...field} />
                         </FormControl>
@@ -148,6 +155,9 @@ export function FrequentUserForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Teléfono</FormLabel>
+                        <FormDescription>
+                          Entre 10 y 15 dígitos, sin espacios ni caracteres especiales
+                        </FormDescription>
                         <FormControl>
                           <Input placeholder="3001234567" {...field} />
                         </FormControl>
@@ -186,6 +196,9 @@ export function FrequentUserForm() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Número</FormLabel>
+                          <FormDescription>
+                            Mínimo 5 caracteres
+                          </FormDescription>
                           <FormControl>
                             <Input placeholder="1020304050" {...field} />
                           </FormControl>
@@ -201,6 +214,9 @@ export function FrequentUserForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Dirección</FormLabel>
+                        <FormDescription>
+                          Mínimo 10 caracteres, incluye calle, número y ciudad
+                        </FormDescription>
                         <FormControl>
                           <Textarea placeholder="Calle 123 #45-67, Bogotá" {...field} />
                         </FormControl>
@@ -247,6 +263,9 @@ export function FrequentUserForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Placa</FormLabel>
+                        <FormDescription>
+                          Entre 5 y 7 caracteres (ej: ABC123)
+                        </FormDescription>
                         <FormControl>
                           <Input placeholder="ABC123" {...field} />
                         </FormControl>
@@ -262,6 +281,9 @@ export function FrequentUserForm() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Marca</FormLabel>
+                          <FormDescription>
+                            Mínimo 2 caracteres
+                          </FormDescription>
                           <FormControl>
                             <Input placeholder="Chevrolet" {...field} />
                           </FormControl>
@@ -276,6 +298,9 @@ export function FrequentUserForm() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Modelo</FormLabel>
+                          <FormDescription>
+                            Mínimo 2 caracteres
+                          </FormDescription>
                           <FormControl>
                             <Input placeholder="Spark GT 2023" {...field} />
                           </FormControl>

@@ -1,3 +1,16 @@
+// =====================================================================
+// COMPONENTE LOGIN (Login.tsx)
+// ---------------------------------------------------------------------
+// Este componente es OTRA versión del formulario de login + registro
+// (similar a AuthPage), pero se monta como una sección dentro de la
+// página de inicio (NO es una página completa).
+//
+// Tiene dos modos:
+//   - "user"  → cuenta normal de cliente
+//   - "admin" → para administradores
+//
+// Y dos pestañas: Iniciar Sesión / Registrarse.
+// =====================================================================
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -13,27 +26,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { User, Building2, Lock, Mail } from "lucide-react";
+import { User, Building2, Lock, Mail } from "lucide-react";  // íconos
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import authService from "@/services/authService";
+import { validatePasswordMatch } from "@/lib/validators";
 
 const Login = () => {
+  // --- ESTADOS LOCALES DEL COMPONENTE -------------------------------
+  // Tipo de usuario seleccionado (botones de arriba)
   const [userType, setUserType] = useState<"user" | "admin">("user");
+  // Campos del formulario de login
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  // Campos del formulario de registro
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  // Estado de carga (para deshabilitar botones mientras procesa)
   const [isLoading, setIsLoading] = useState(false);
+  // Funciones del contexto y hook de notificaciones
   const { login, loginWithMock } = useAuth();
   const { toast } = useToast();
 
+  // -------------------------------------------------------------------
+  // LOGIN: enviar email + password al backend
+  // -------------------------------------------------------------------
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      // login() del contexto: hace el POST y redirige al dashboard
       await login(loginEmail, loginPassword);
       toast({
         title: "¡Bienvenido!",
@@ -47,17 +71,23 @@ const Login = () => {
         variant: "destructive",
       });
     } finally {
+      // finally: pase lo que pase (éxito o error), siempre quitamos el loading
       setIsLoading(false);
     }
   };
 
+  // -------------------------------------------------------------------
+  // REGISTRO: crear cuenta nueva
+  // -------------------------------------------------------------------
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (registerPassword !== confirmPassword) {
+    // Validación rápida: las dos contraseñas deben coincidir
+    const matchError = validatePasswordMatch(registerPassword, confirmPassword);
+    if (matchError) {
       toast({
         title: "Error",
-        description: "Las contraseñas no coinciden",
+        description: matchError,
         variant: "destructive",
       });
       return;
@@ -65,6 +95,7 @@ const Login = () => {
 
     setIsLoading(true);
     try {
+      // Llamamos al servicio de auth para crear el usuario en el backend
       await authService.register({
         email: registerEmail,
         password: registerPassword,
@@ -76,6 +107,7 @@ const Login = () => {
         description: "Tu cuenta ha sido creada correctamente. Por favor inicia sesión.",
       });
       
+      // Limpiamos los campos después del registro exitoso
       setRegisterName("");
       setRegisterEmail("");
       setRegisterPassword("");
@@ -92,6 +124,9 @@ const Login = () => {
     }
   };
 
+  // -------------------------------------------------------------------
+  // LOGIN DEMO: entra sin backend (útil para probar la UI)
+  // -------------------------------------------------------------------
   const handleMockLogin = (role: "cliente" | "admin") => {
     loginWithMock({
       email: loginEmail || "demo@example.com",
@@ -99,9 +134,13 @@ const Login = () => {
     });
   };
 
+  // -------------------------------------------------------------------
+  // RENDERIZADO
+  // -------------------------------------------------------------------
   return (
     <section id="login" className="py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Encabezado de la sección */}
         <div className="text-center">
           <Badge className="mb-3" variant="outline">Acceso</Badge>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Inicia Sesión en tu Cuenta</h2>
@@ -113,6 +152,7 @@ const Login = () => {
         <div className="mt-12 flex justify-center">
           <Card className="w-full max-w-md shadow-lg">
             <CardHeader>
+              {/* Botones para alternar entre "Usuario" y "Administrador" */}
               <div className="flex justify-center space-x-4 mb-4">
                 <Button
                   variant={userType === "user" ? "default" : "outline"}
@@ -131,6 +171,7 @@ const Login = () => {
                   Administrador
                 </Button>
               </div>
+              {/* Título y descripción cambian según el userType */}
               <CardTitle className="text-center text-2xl">
                 {userType === "user" ? "Acceso de Usuario" : "Acceso de Administrador"}
               </CardTitle>
@@ -142,14 +183,17 @@ const Login = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Pestañas: login / registro */}
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
                   <TabsTrigger value="register">Registrarse</TabsTrigger>
                 </TabsList>
                 
+                {/* ============== FORMULARIO LOGIN ============== */}
                 <TabsContent value="login">
                   <form onSubmit={handleLogin} className="space-y-4">
+                    {/* Campo email controlado (value + onChange = react controlled input) */}
                     <div className="space-y-2">
                       <Label htmlFor="email">Correo Electrónico</Label>
                       <p className="text-sm text-gray-700 font-semibold">Correo asociado a tu cuenta</p>
@@ -167,6 +211,7 @@ const Login = () => {
                         />
                       </div>
                     </div>
+                    {/* Campo contraseña + enlace de "olvidé mi contraseña" */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="password">Contraseña</Label>
@@ -192,6 +237,7 @@ const Login = () => {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Iniciando..." : "Iniciar Sesión"}
                     </Button>
+                    {/* Botón demo: solo aparece según el userType seleccionado */}
                     {userType === "admin" && (
                       <Button 
                         type="button" 
@@ -217,6 +263,7 @@ const Login = () => {
                   </form>
                 </TabsContent>
                 
+                {/* ============== FORMULARIO REGISTRO ============== */}
                 <TabsContent value="register">
                   <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
@@ -294,6 +341,7 @@ const Login = () => {
               </Tabs>
             </CardContent>
             <CardFooter className="flex flex-col text-center text-sm text-gray-600">
+              {/* Footer cambia según userType: usuarios ven los T&C, admins un aviso */}
               {userType === "user" ? (
                 <p>
                   Al registrarte, aceptas nuestros{" "}

@@ -4,8 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Edit, Trash2, ListChecks } from "lucide-react";
-import { listAllReservations, updateReservation, deleteReservation, type Reservation } from "@/lib/reservations";
-import { ReservationForm } from "@/components/Reservations/ReservationForm";
+import reservationService, { type Reservation } from "@/services/reservationService";
+import { ReservationForm, type ReservationFormData } from "@/components/Reservations/ReservationForm";
 import { useToast } from "@/hooks/use-toast";
 
 export function ReservationsPanel() {
@@ -15,56 +15,55 @@ export function ReservationsPanel() {
   const [editing, setEditing] = useState<Reservation | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const run = async () => {
-      setLoading(true);
-      try {
-        const data = await listAllReservations();
-        setItems(data);
-      } catch (e: any) {
-        toast({ title: "Error", description: e.message || "No se pudieron cargar las reservas", variant: "destructive" });
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
-  }, [toast]);
-
-  const openEdit = (r: Reservation) => { setEditing(r); setDialogOpen(true); };
-
-  const handleSubmit = async (data: {
-    location_name: string;
-    space_code?: string | null;
-    start_time: string;
-    end_time: string;
-    amount?: number | null;
-    notes?: string | null;
-  }) => {
-    if (!editing) return;
+  const load = async () => {
+    setLoading(true);
     try {
-      const updated = await updateReservation(editing.id, {
-        location_name: data.location_name,
-        space_code: data.space_code ?? null,
-        start_time: data.start_time,
-        end_time: data.end_time,
-        amount: data.amount ?? null,
-        notes: data.notes ?? null,
-      });
-      setItems(prev => prev.map(x => x.id === updated.id ? updated : x));
-      setDialogOpen(false);
-      toast({ title: "Reserva actualizada" });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "No fue posible actualizar", variant: "destructive" });
+      const data = await reservationService.getReservations();
+      setItems(data);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudieron cargar las reservas";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openEdit = (r: Reservation) => {
+    setEditing(r);
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = async (data: ReservationFormData) => {
+    if (!editing) return;
     try {
-      await deleteReservation(id);
-      setItems(prev => prev.filter(x => x.id !== id));
+      const updated = await reservationService.updateReservation(editing.id, {
+        locationId: data.locationId,
+        vehicleId: data.vehicleId,
+        startDate: data.startDate,
+        endDate: data.endDate,
+      });
+      setItems((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+      setDialogOpen(false);
+      toast({ title: "Reserva actualizada" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No fue posible actualizar";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await reservationService.deleteReservation(id);
+      setItems((prev) => prev.filter((x) => x.id !== id));
       toast({ title: "Reserva eliminada" });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "No se pudo eliminar", variant: "destructive" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo eliminar";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     }
   };
 
@@ -96,13 +95,13 @@ export function ReservationsPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map(r => (
+                {items.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.user_id}</TableCell>
-                    <TableCell>{r.location_name}</TableCell>
-                    <TableCell>{new Date(r.start_time).toLocaleString()}</TableCell>
-                    <TableCell>{new Date(r.end_time).toLocaleString()}</TableCell>
-                    <TableCell>{r.status}</TableCell>
+                    <TableCell className="font-medium">{r.userId}</TableCell>
+                    <TableCell>#{r.locationId}</TableCell>
+                    <TableCell>{new Date(r.startDate).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(r.endDate).toLocaleString()}</TableCell>
+                    <TableCell className="capitalize">{r.status}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button size="icon" variant="outline" onClick={() => openEdit(r)}>
@@ -137,5 +136,3 @@ export function ReservationsPanel() {
     </Card>
   );
 }
-
-

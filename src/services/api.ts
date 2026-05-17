@@ -91,8 +91,20 @@ async function apiRequest<T>(
       throw new Error(errorMsg);
     }
 
-    // Todo OK: parseamos el cuerpo como JSON y lo devolvemos.
-    const data = await response.json();
+    // Algunas respuestas (DELETE, refunds, etc.) llegan vacías (status 204
+    // o Content-Length: 0). Si intentáramos parsearlas como JSON tiraría
+    // error. Detectamos esos casos y devolvemos null.
+    const contentLength = response.headers.get('content-length');
+    if (response.status === 204 || contentLength === '0') {
+      return null as unknown as T;
+    }
+
+    const text = await response.text();
+    if (!text) {
+      return null as unknown as T;
+    }
+
+    const data = JSON.parse(text) as T;
     if (isDev) {
       console.log(`[API] Data:`, data);
     }

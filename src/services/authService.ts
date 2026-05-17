@@ -97,22 +97,23 @@ class AuthService {
 
   // ---- VALIDAR TOKEN ---------------------------------------------------
   // Le pregunta al backend si el token actual sigue siendo válido.
-  // Devuelve true si todo está bien, false si está vencido/no existe.
-  async validateToken(): Promise<boolean> {
+  // Si el token es válido devuelve los datos del usuario para que el front
+  // pueda repoblar la sesión tras un refresh; devuelve null en caso contrario.
+  async validateToken(): Promise<LoginResponse | null> {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return false;  // sin token, claramente no hay sesión
-      
-      // El header Authorization lo agrega automáticamente apiRequest
-      await apiRequest('/auth/validate', {
+      if (!token) return null;
+
+      const response = await apiRequest<LoginResponse>('/auth/validate', {
         method: 'GET',
       });
-      
-      return true;
+
+      const id = String(response.id_usuario ?? response.id ?? '');
+      return { ...response, id };
     } catch {
       // Si el backend dice 401 u otro error, borramos el token roto
       localStorage.removeItem('token');
-      return false;
+      return null;
     }
   }
 }

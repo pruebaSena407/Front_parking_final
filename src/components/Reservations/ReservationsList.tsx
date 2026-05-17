@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Car, Edit, Trash2, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { cancelReservation, createReservation, listMyReservations, updateReservation, type Reservation } from "@/lib/reservations";
-import { ReservationForm } from "./ReservationForm";
+import reservationService, { type Reservation } from "@/services/reservationService";
+import { ReservationForm, type ReservationFormData } from "./ReservationForm";
 import { useToast } from "@/hooks/use-toast";
 
 export function ReservationsList() {
@@ -18,76 +18,84 @@ export function ReservationsList() {
   const [editing, setEditing] = useState<Reservation | null>(null);
 
   const activeReservations = useMemo(
-    () => items.filter(r => r.status === "activa"),
+    () => items.filter((r) => r.status === "confirmed" || r.status === "pending"),
     [items]
   );
 
+  const loadMine = async () => {
+    if (!user) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await reservationService.getReservations();
+      // El backend devuelve TODAS las reservas; filtramos las del usuario actual.
+      setItems(data.filter((r) => String(r.userId) === String(user.id)));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudieron cargar las reservas";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const run = async () => {
-      if (!user) { setItems([]); setLoading(false); return; }
-      setLoading(true);
-      try {
-        const data = await listMyReservations(user.id);
-        setItems(data);
-      } catch (e: any) {
-        toast({ title: "Error", description: e.message || "No se pudieron cargar las reservas", variant: "destructive" });
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
-  }, [user, toast]);
+    loadMine();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const openCreate = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (r: Reservation) => { setEditing(r); setDialogOpen(true); };
 
-  const handleSubmit = async (data: {
-    location_name: string;
-    space_code?: string | null;
-    start_time: string;
-    end_time: string;
-    amount?: number | null;
-    notes?: string | null;
-  }) => {
+  const handleSubmit = async (data: ReservationFormData) => {
     if (!user) return;
     try {
       if (editing) {
-        const updated = await updateReservation(editing.id, {
-          location_name: data.location_name,
-          space_code: data.space_code ?? null,
-          start_time: data.start_time,
-          end_time: data.end_time,
-          amount: data.amount ?? null,
-          notes: data.notes ?? null,
+        const updated = await reservationService.updateReservation(editing.id, {
+          locationId: data.locationId,
+          vehicleId: data.vehicleId,
+          startDate: data.startDate,
+          endDate: data.endDate,
         });
-        setItems(prev => prev.map(x => x.id === updated.id ? updated : x));
+        setItems((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
         toast({ title: "Reserva actualizada", description: "Los cambios han sido guardados." });
       } else {
-        const created = await createReservation({
-          user_id: user.id,
-          location_name: data.location_name,
-          space_code: data.space_code ?? null,
-          start_time: data.start_time,
-          end_time: data.end_time,
-          amount: data.amount ?? null,
-          notes: data.notes ?? null,
+        const created = await reservationService.createReservation({
+          userId: user.id,
+          locationId: data.locationId,
+          vehicleId: data.vehicleId,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          spaceCode: data.spaceCode,
+          totalPrice: data.totalPrice,
+          notes: data.notes,
         });
-        setItems(prev => [created, ...prev]);
+        setItems((prev) => [created, ...prev]);
         toast({ title: "Reserva creada", description: "Tu reserva ha sido registrada." });
       }
       setDialogOpen(false);
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "No fue posible guardar la reserva", variant: "destructive" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No fue posible guardar la reserva";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     }
   };
 
-  const handleCancel = async (id: string) => {
+  const handleCancel = async (id: number) => {
     try {
-      const updated = await cancelReservation(id);
-      setItems(prev => prev.map(x => x.id === id ? updated : x));
+      const updated = await reservationService.cancelReservation(id);
+      // Si el backend respondió con la reserva, actualizamos en sitio;
+      // si no devolvió cuerpo, simplemente recargamos.
+      if (updated && updated.id) {
+        setItems((prev) => prev.map((x) => (x.id === id ? updated : x)));
+      } else {
+        await loadMine();
+      }
       toast({ title: "Reserva cancelada", description: "La reserva fue cancelada correctamente." });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "No se pudo cancelar la reserva", variant: "destructive" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo cancelar la reserva";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     }
   };
 
@@ -115,19 +123,19 @@ export function ReservationsList() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Ubicación</TableHead>
-                  <TableHead className="hidden sm:table-cell">Espacio</TableHead>
                   <TableHead>Inicio</TableHead>
                   <TableHead className="hidden md:table-cell">Fin</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activeReservations.map(r => (
+                {activeReservations.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.location_name}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{r.space_code ?? "-"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(r.start_time).toLocaleString()}</TableCell>
-                    <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">{new Date(r.end_time).toLocaleString()}</TableCell>
+                    <TableCell className="font-medium">#{r.locationId}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(r.startDate).toLocaleString()}</TableCell>
+                    <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">{new Date(r.endDate).toLocaleString()}</TableCell>
+                    <TableCell className="capitalize">{r.status}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => openEdit(r)}>
@@ -143,17 +151,16 @@ export function ReservationsList() {
               </TableBody>
             </Table>
           </div>
-          {/* Card view en móvil */}
           <div className="sm:hidden space-y-3">
-            {activeReservations.map(r => (
+            {activeReservations.map((r) => (
               <div key={r.id} className="border rounded-md p-3">
                 <div className="flex items-center justify-between">
-                  <div className="font-medium">{r.location_name}</div>
-                  <div className="text-xs text-muted-foreground">{r.space_code ?? "-"}</div>
+                  <div className="font-medium">Ubicación #{r.locationId}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{r.status}</div>
                 </div>
                 <div className="mt-2 text-xs text-muted-foreground">
-                  <div>Inicio: {new Date(r.start_time).toLocaleString()}</div>
-                  <div>Fin: {new Date(r.end_time).toLocaleString()}</div>
+                  <div>Inicio: {new Date(r.startDate).toLocaleString()}</div>
+                  <div>Fin: {new Date(r.endDate).toLocaleString()}</div>
                 </div>
                 <div className="mt-3 flex justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={() => openEdit(r)}>Editar</Button>
@@ -177,7 +184,6 @@ export function ReservationsList() {
           </DialogContent>
         </Dialog>
       </CardContent>
-      {/* FAB móvil para crear reserva */}
       <Button
         className="md:hidden fixed bottom-20 right-5 rounded-full h-12 w-12 shadow-lg"
         onClick={openCreate}
@@ -188,5 +194,3 @@ export function ReservationsList() {
     </Card>
   );
 }
-
-

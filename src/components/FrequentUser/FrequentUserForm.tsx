@@ -25,7 +25,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, CreditCard, Car, Clock } from "lucide-react";
+import { User, Car, Clock } from "lucide-react";
+import frequentUserService from "@/services/frequentUserService";
+import locationService, { type Location } from "@/services/locationService";
+import { useEffect, useState } from "react";
 
 const frequentUserSchema = z.object({
   fullName: z.string()
@@ -77,14 +80,41 @@ export function FrequentUserForm() {
   });
 
   const { toast } = useToast();
+  const [submitting, setSubmitting] = useState(false);
+  const [locations, setLocations] = useState<Location[]>([]);
 
-  const onSubmit = (values: FormValues) => {
-    console.log(values);
-    toast({
-      title: "Registro exitoso",
-      description: "Tu solicitud ha sido enviada. Te contactaremos pronto.",
-    });
-    form.reset();
+  useEffect(() => {
+    locationService.getLocations().then(setLocations).catch(() => setLocations([]));
+  }, []);
+
+  const onSubmit = async (values: FormValues) => {
+    setSubmitting(true);
+    try {
+      await frequentUserService.register({
+        fullName: values.fullName,
+        email: values.email,
+        phone: values.phone,
+        documentType: values.documentType,
+        documentNumber: values.documentNumber,
+        vehicleType: values.vehicleType,
+        licensePlate: values.licensePlate,
+        vehicleBrand: values.vehicleBrand,
+        vehicleModel: values.vehicleModel,
+        address: values.address,
+        preferredLocation: values.preferredLocation,
+      });
+      toast({
+        title: "Registro exitoso",
+        description:
+          "Tu solicitud ha sido enviada. En breve recibirás los detalles de acceso por correo.",
+      });
+      form.reset();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo completar el registro";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -323,10 +353,17 @@ export function FrequentUserForm() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="centro">Centro Comercial Centro</SelectItem>
-                            <SelectItem value="norte">Centro Comercial Norte</SelectItem>
-                            <SelectItem value="salitre">Salitre Plaza</SelectItem>
-                            <SelectItem value="chapinero">Chapinero Central</SelectItem>
+                            {locations.length === 0 ? (
+                              <SelectItem value="" disabled>
+                                No hay sedes disponibles
+                              </SelectItem>
+                            ) : (
+                              locations.map((loc) => (
+                                <SelectItem key={loc.id} value={String(loc.id)}>
+                                  {loc.name} — {loc.address}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -371,8 +408,8 @@ export function FrequentUserForm() {
               />
               
               <div className="flex justify-end">
-                <Button type="submit" size="lg">
-                  Registrarme como Usuario Frecuente
+                <Button type="submit" size="lg" disabled={submitting}>
+                  {submitting ? "Enviando..." : "Registrarme como Usuario Frecuente"}
                 </Button>
               </div>
             </form>

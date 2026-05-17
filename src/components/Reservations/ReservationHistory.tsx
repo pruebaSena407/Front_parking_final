@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
-import { listMyReservations, type Reservation } from "@/lib/reservations";
+import reservationService, { type Reservation } from "@/services/reservationService";
 
 export function ReservationHistory() {
   const { user } = useAuth();
@@ -10,17 +10,24 @@ export function ReservationHistory() {
   const [loading, setLoading] = useState(true);
 
   const history = useMemo(
-    () => items.filter(r => r.status !== "activa").sort((a, b) => (a.start_time < b.start_time ? 1 : -1)),
+    () =>
+      items
+        .filter((r) => r.status === "completed" || r.status === "cancelled")
+        .sort((a, b) => (a.startDate < b.startDate ? 1 : -1)),
     [items]
   );
 
   useEffect(() => {
     const run = async () => {
-      if (!user) { setItems([]); setLoading(false); return; }
+      if (!user) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
-        const data = await listMyReservations(user.id);
-        setItems(data);
+        const data = await reservationService.getReservations();
+        setItems(data.filter((r) => String(r.userId) === String(user.id)));
       } finally {
         setLoading(false);
       }
@@ -48,15 +55,13 @@ export function ReservationHistory() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history.map(r => (
+                {history.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.location_name}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(r.start_time).toLocaleString()}</TableCell>
-                    <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">{new Date(r.end_time).toLocaleString()}</TableCell>
+                    <TableCell className="font-medium">#{r.locationId}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(r.startDate).toLocaleString()}</TableCell>
+                    <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">{new Date(r.endDate).toLocaleString()}</TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      <span className="text-xs px-2 py-1 rounded-full bg-muted">
-                        {r.status}
-                      </span>
+                      <span className="text-xs px-2 py-1 rounded-full bg-muted capitalize">{r.status}</span>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -68,5 +73,3 @@ export function ReservationHistory() {
     </Card>
   );
 }
-
-

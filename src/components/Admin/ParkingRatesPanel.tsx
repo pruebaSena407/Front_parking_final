@@ -1,29 +1,20 @@
-
-import { useState } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Clock } from "lucide-react";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import { ParkingRateForm } from "./ParkingRateForm";
 import { useToast } from "@/hooks/use-toast";
+import rateService, { type Rate, type VehicleType } from "@/services/rateService";
 
-// Properly type the vehicleType
-type VehicleType = "car" | "motorcycle" | "bicycle" | "truck";
-
-// Mock data for rates with proper typing
-const initialRates = [
-  { id: 1, name: "Tarifa Estándar", hourlyRate: 5000, dailyRate: 25000, vehicleType: "car" as VehicleType },
-  { id: 2, name: "Tarifa Motocicleta", hourlyRate: 3000, dailyRate: 15000, vehicleType: "motorcycle" as VehicleType },
-  { id: 3, name: "Tarifa Premium", hourlyRate: 8000, dailyRate: 40000, vehicleType: "car" as VehicleType },
-];
-
+// Re-exportamos el tipo "ParkingRate" que usaba el formulario para no romper imports.
 export type ParkingRate = {
   id: number;
   name: string;
@@ -33,50 +24,89 @@ export type ParkingRate = {
 };
 
 export function ParkingRatesPanel() {
-  const [rates, setRates] = useState<ParkingRate[]>(initialRates);
+  const [rates, setRates] = useState<Rate[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentRate, setCurrentRate] = useState<ParkingRate | null>(null);
   const { toast } = useToast();
 
-  const handleAddRate = (rate: Omit<ParkingRate, "id">) => {
-    const newRate = {
-      ...rate,
-      id: rates.length ? Math.max(...rates.map(r => r.id)) + 1 : 1
-    };
-    
-    setRates([...rates, newRate]);
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "Tarifa creada",
-      description: `${rate.name} ha sido añadida correctamente.`
-    });
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await rateService.getRates();
+      setRates(data);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error al cargar tarifas";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditRate = (rate: ParkingRate) => {
-    setRates(rates.map(r => r.id === rate.id ? rate : r));
-    setCurrentRate(null);
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "Tarifa actualizada",
-      description: `${rate.name} ha sido actualizada correctamente.`
-    });
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleAddRate = async (rate: Omit<ParkingRate, "id">) => {
+    try {
+      const created = await rateService.createRate({
+        name: rate.name,
+        hourlyRate: rate.hourlyRate,
+        dailyRate: rate.dailyRate,
+        vehicleType: rate.vehicleType,
+      });
+      setRates((prev) => [...prev, created]);
+      setIsDialogOpen(false);
+      toast({ title: "Tarifa creada", description: `${rate.name} ha sido añadida correctamente.` });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo crear la tarifa";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    }
   };
 
-  const handleDeleteRate = (id: number) => {
-    const rateToDelete = rates.find(r => r.id === id);
-    setRates(rates.filter(r => r.id !== id));
-    
-    toast({
-      title: "Tarifa eliminada",
-      description: `${rateToDelete?.name} ha sido eliminada correctamente.`,
-      variant: "destructive"
-    });
+  const handleEditRate = async (rate: ParkingRate) => {
+    try {
+      const updated = await rateService.updateRate(rate.id, {
+        name: rate.name,
+        hourlyRate: rate.hourlyRate,
+        dailyRate: rate.dailyRate,
+        vehicleType: rate.vehicleType,
+      });
+      setRates((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      setCurrentRate(null);
+      setIsDialogOpen(false);
+      toast({ title: "Tarifa actualizada", description: `${rate.name} ha sido actualizada correctamente.` });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo actualizar la tarifa";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    }
   };
 
-  const openEditDialog = (rate: ParkingRate) => {
-    setCurrentRate(rate);
+  const handleDeleteRate = async (id: number) => {
+    const rateToDelete = rates.find((r) => r.id === id);
+    try {
+      await rateService.deleteRate(id);
+      setRates((prev) => prev.filter((r) => r.id !== id));
+      toast({
+        title: "Tarifa eliminada",
+        description: `${rateToDelete?.name} ha sido eliminada correctamente.`,
+        variant: "destructive",
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo eliminar la tarifa";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    }
+  };
+
+  const openEditDialog = (rate: Rate) => {
+    setCurrentRate({
+      id: rate.id,
+      name: rate.name,
+      hourlyRate: rate.hourlyRate,
+      dailyRate: rate.dailyRate,
+      vehicleType: rate.vehicleType,
+    });
     setIsDialogOpen(true);
   };
 
@@ -85,21 +115,20 @@ export function ParkingRatesPanel() {
     setIsDialogOpen(true);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
-  };
 
   const getVehicleTypeLabel = (type: VehicleType) => {
     const types: Record<VehicleType, string> = {
       car: "Automóvil",
       motorcycle: "Motocicleta",
       bicycle: "Bicicleta",
-      truck: "Camión"
+      truck: "Camión",
     };
     return types[type];
   };
@@ -120,13 +149,11 @@ export function ParkingRatesPanel() {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>
-                {currentRate ? "Editar Tarifa" : "Añadir Nueva Tarifa"}
-              </DialogTitle>
+              <DialogTitle>{currentRate ? "Editar Tarifa" : "Añadir Nueva Tarifa"}</DialogTitle>
             </DialogHeader>
-            <ParkingRateForm 
-              initialData={currentRate || undefined} 
-              onSubmit={currentRate ? handleEditRate : handleAddRate} 
+            <ParkingRateForm
+              initialData={currentRate || undefined}
+              onSubmit={currentRate ? handleEditRate : handleAddRate}
               onCancel={() => setIsDialogOpen(false)}
             />
           </DialogContent>
@@ -145,14 +172,20 @@ export function ParkingRatesPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rates.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                    Cargando tarifas...
+                  </TableCell>
+                </TableRow>
+              ) : rates.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
                     No hay tarifas registradas.
                   </TableCell>
                 </TableRow>
               ) : (
-                rates.map(rate => (
+                rates.map((rate) => (
                   <TableRow key={rate.id}>
                     <TableCell className="font-medium">{rate.name}</TableCell>
                     <TableCell>{getVehicleTypeLabel(rate.vehicleType)}</TableCell>

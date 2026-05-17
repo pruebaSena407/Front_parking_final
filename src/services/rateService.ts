@@ -1,43 +1,43 @@
 import apiRequest from './api';
 
+export type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'truck';
+
 export interface Rate {
   id: number;
-  locationId: number;
+  name: string;
   hourlyRate: number;
   dailyRate: number;
-  monthlyRate: number;
+  monthlyRate: number | null;
   currency: string;
+  vehicleType: VehicleType;
+  locationId: number | null;
 }
 
 export interface CreateRateRequest {
-  locationId: number;
+  name: string;
   hourlyRate: number;
   dailyRate: number;
-  monthlyRate: number;
-  currency: string;
+  monthlyRate?: number | null;
+  currency?: string;
+  vehicleType: VehicleType;
+  locationId?: number | null;
 }
 
 class RateService {
   async getRates(): Promise<Rate[]> {
-    return apiRequest<Rate[]>('/rates', {
-      method: 'GET',
-    });
+    return apiRequest<Rate[]>('/rates/', { method: 'GET' });
   }
 
   async getRate(id: number): Promise<Rate> {
-    return apiRequest<Rate>(`/rates/${id}`, {
-      method: 'GET',
-    });
+    return apiRequest<Rate>(`/rates/${id}`, { method: 'GET' });
   }
 
   async getRateByLocation(locationId: number): Promise<Rate> {
-    return apiRequest<Rate>(`/rates/location/${locationId}`, {
-      method: 'GET',
-    });
+    return apiRequest<Rate>(`/rates/location/${locationId}`, { method: 'GET' });
   }
 
   async createRate(data: CreateRateRequest): Promise<Rate> {
-    return apiRequest<Rate>('/rates', {
+    return apiRequest<Rate>('/rates/', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -51,9 +51,7 @@ class RateService {
   }
 
   async deleteRate(id: number): Promise<void> {
-    await apiRequest(`/rates/${id}`, {
-      method: 'DELETE',
-    });
+    await apiRequest(`/rates/${id}`, { method: 'DELETE' });
   }
 }
 

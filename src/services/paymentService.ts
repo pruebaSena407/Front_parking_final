@@ -1,12 +1,15 @@
 import apiRequest from './api';
 
+export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+
 export interface Payment {
   id: number;
   reservationId: number;
   amount: number;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  status: PaymentStatus;
   method: string;
   transactionId: string;
+  paymentDate?: string | null;
   createdAt: string;
 }
 
@@ -14,29 +17,26 @@ export interface CreatePaymentRequest {
   reservationId: number;
   amount: number;
   method: string;
+  status?: PaymentStatus;
 }
 
 class PaymentService {
   async getPayments(): Promise<Payment[]> {
-    return apiRequest<Payment[]>('/pagos', {
-      method: 'GET',
-    });
+    return apiRequest<Payment[]>('/pagos/', { method: 'GET' });
   }
 
   async getPayment(id: number): Promise<Payment> {
-    return apiRequest<Payment>(`/pagos/${id}`, {
-      method: 'GET',
-    });
+    return apiRequest<Payment>(`/pagos/${id}`, { method: 'GET' });
   }
 
   async createPayment(data: CreatePaymentRequest): Promise<Payment> {
-    return apiRequest<Payment>('/pagos', {
+    return apiRequest<Payment>('/pagos/', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updatePaymentStatus(id: number, status: string): Promise<Payment> {
+  async updatePaymentStatus(id: number, status: PaymentStatus): Promise<Payment> {
     return apiRequest<Payment>(`/pagos/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ status }),

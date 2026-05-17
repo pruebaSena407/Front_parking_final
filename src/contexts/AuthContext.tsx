@@ -90,14 +90,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // ---- VALIDACIÓN DEL TOKEN ---------------------------------------
   // Llama al backend a /api/auth/validate para revisar si el token
   // guardado en localStorage sigue siendo válido (no expirado).
+  // Cuando lo es, REPUEBLA `user` y `userRole` con los datos que el
+  // backend devuelve (necesario para que la sesión sobreviva a un F5).
   const validateToken = async () => {
-    const isValid = await authService.validateToken();
-    if (!isValid) {
+    const profile = await authService.validateToken();
+    if (!profile) {
       // Si el token no sirve, limpiamos todo y dejamos al usuario sin sesión.
       localStorage.removeItem("token");
       localStorage.removeItem("mockAuth");
       setUser(null);
       setUserRole(null);
+    } else {
+      const role = (profile.id_rol as UserRole) || "cliente";
+      setUser({
+        id: profile.id || String(profile.id_usuario ?? ""),
+        email: profile.correo,
+        role,
+      });
+      setUserRole(role);
     }
     setLoading(false);
   };

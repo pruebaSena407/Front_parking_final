@@ -12,49 +12,45 @@ export interface Reservation {
   id: number;
   userId: string;
   locationId: number;
-  vehicleId: string;
+  vehicleId: string | null;
+  spaceCode?: string | null;
   startDate: string;
   endDate: string;
-  // Solo se permiten estos 4 estados:
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  totalPrice: number;
+  totalPrice: number | null;
+  notes?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
-// Datos mínimos que mandamos para CREAR una reserva
+// Datos que mandamos para CREAR una reserva
 export interface CreateReservationRequest {
+  userId?: string;
   locationId: number;
-  vehicleId: string;
+  vehicleId: string | null;
   startDate: string;
   endDate: string;
+  spaceCode?: string | null;
+  totalPrice?: number | null;
+  notes?: string | null;
 }
 
-// Clase que agrupa las llamadas al API de reservas
 class ReservationService {
-  // GET /api/reservations → traer todas las reservas
   async getReservations(): Promise<Reservation[]> {
-    return apiRequest<Reservation[]>('/reservations', {
-      method: 'GET',
-    });
+    return apiRequest<Reservation[]>('/reservations/', { method: 'GET' });
   }
 
-  // GET /api/reservations/:id → una reserva específica
   async getReservation(id: number): Promise<Reservation> {
-    return apiRequest<Reservation>(`/reservations/${id}`, {
-      method: 'GET',
-    });
+    return apiRequest<Reservation>(`/reservations/${id}`, { method: 'GET' });
   }
 
-  // POST /api/reservations → crear una reserva nueva
   async createReservation(data: CreateReservationRequest): Promise<Reservation> {
-    return apiRequest<Reservation>('/reservations', {
+    return apiRequest<Reservation>('/reservations/', {
       method: 'POST',
-      body: JSON.stringify(data),  // convertimos el objeto a JSON
+      body: JSON.stringify(data),
     });
   }
 
-  // PUT /api/reservations/:id → actualizar una reserva
-  // Partial<X> significa que TODOS los campos de X son opcionales,
-  // útil para enviar solo lo que cambia.
   async updateReservation(id: number, data: Partial<CreateReservationRequest>): Promise<Reservation> {
     return apiRequest<Reservation>(`/reservations/${id}`, {
       method: 'PUT',
@@ -62,20 +58,15 @@ class ReservationService {
     });
   }
 
-  // POST /api/reservations/:id/cancel → marcar como cancelada
-  async cancelReservation(id: number): Promise<void> {
-    await apiRequest(`/reservations/${id}/cancel`, {
+  async cancelReservation(id: number): Promise<Reservation> {
+    return apiRequest<Reservation>(`/reservations/${id}/cancel`, {
       method: 'POST',
     });
   }
 
-  // DELETE /api/reservations/:id → borrar una reserva
   async deleteReservation(id: number): Promise<void> {
-    await apiRequest(`/reservations/${id}`, {
-      method: 'DELETE',
-    });
+    await apiRequest(`/reservations/${id}`, { method: 'DELETE' });
   }
 }
 
-// Singleton: una sola instancia para toda la app
 export default new ReservationService();

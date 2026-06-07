@@ -354,9 +354,11 @@ export function FrequentUserForm() {
                           </FormControl>
                           <SelectContent>
                             {locations.length === 0 ? (
-                              <SelectItem value="" disabled>
+                              // OJO: Radix prohíbe <SelectItem value="">. Usamos un
+                              // texto normal cuando no hay sedes para no romper la página.
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
                                 No hay sedes disponibles
-                              </SelectItem>
+                              </div>
                             ) : (
                               locations.map((loc) => (
                                 <SelectItem key={loc.id} value={String(loc.id)}>

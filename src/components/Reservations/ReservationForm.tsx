@@ -10,12 +10,20 @@ import type { Reservation } from "@/services/reservationService";
 export type ReservationFormData = {
   locationId: number;
   vehicleId: string;
+  vehicleType: string;
   startDate: string;
   endDate: string;
   spaceCode?: string | null;
   totalPrice?: number | null;
   notes?: string | null;
 };
+
+const VEHICLE_TYPES: { value: string; label: string }[] = [
+  { value: "car", label: "Carro" },
+  { value: "motorcycle", label: "Moto" },
+  { value: "bicycle", label: "Bicicleta" },
+  { value: "truck", label: "Camión" },
+];
 
 function toLocalInputValue(d: Date) {
   // datetime-local exige YYYY-MM-DDTHH:MM en hora local
@@ -35,77 +43,62 @@ export function ReservationForm({
   const [locations, setLocations] = useState<Location[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [estimate, setEstimate] = useState<Quote | null>(null);
+  const [vehicleType, setVehicleType] = useState<string>("car");
 
-  const [form, setForm] = useState<ReservationFormData>(() => {
+  // El usuario elige UNA fecha de inicio y CUÁNTAS horas reserva.
+  const [locationId, setLocationId] = useState<number>(initialData?.locationId ?? 0);
+  const [vehicleId, setVehicleId] = useState<string>(initialData?.vehicleId ?? "");
+  const [notes, setNotes] = useState<string>((initialData as any)?.notes ?? "");
+  const [startDate, setStartDate] = useState<string>(
+    initialData ? initialData.startDate.slice(0, 16) : toLocalInputValue(new Date())
+  );
+  const [hours, setHours] = useState<number>(() => {
     if (initialData) {
-      return {
-        locationId: initialData.locationId,
-        vehicleId: initialData.vehicleId ?? "",
-        startDate: initialData.startDate.slice(0, 16),
-        endDate: initialData.endDate.slice(0, 16),
-        spaceCode: (initialData as any).spaceCode ?? null,
-        totalPrice: initialData.totalPrice ?? null,
-        notes: (initialData as any).notes ?? null,
-      };
+      const diff =
+        (new Date(initialData.endDate).getTime() - new Date(initialData.startDate).getTime()) /
+        3_600_000;
+      return diff > 0 ? Math.max(1, Math.round(diff)) : 1;
     }
-    const now = new Date();
-    const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
-    return {
-      locationId: 0,
-      vehicleId: "",
-      startDate: toLocalInputValue(now),
-      endDate: toLocalInputValue(inOneHour),
-      spaceCode: "",
-      totalPrice: null,
-      notes: "",
-    };
+    return 1;
   });
 
   useEffect(() => {
     locationService.getLocations().then(setLocations).catch(() => setLocations([]));
   }, []);
 
-  // Estimado de cobro desde la tarifa vigente (ubicación + duración).
+  // Total calculado por el backend: tarifa (según tipo y ubicación) × horas.
   useEffect(() => {
-    if (!form.locationId || !form.startDate || !form.endDate) {
-      setEstimate(null);
-      return;
-    }
-    const start = new Date(form.startDate);
-    const end = new Date(form.endDate);
-    const hours = (end.getTime() - start.getTime()) / 3_600_000;
-    if (!(hours > 0)) {
+    if (!locationId || !hours || hours <= 0) {
       setEstimate(null);
       return;
     }
     let cancelled = false;
     rateService
-      .getQuote({ locationId: Number(form.locationId), hours })
+      .getQuote({ locationId: Number(locationId), vehicleType, hours })
       .then((q) => !cancelled && setEstimate(q))
       .catch(() => !cancelled && setEstimate(null));
     return () => {
       cancelled = true;
     };
-  }, [form.locationId, form.startDate, form.endDate]);
-
-  const handleChange =
-    (key: keyof ReservationFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = key === "totalPrice" ? Number(e.target.value) : e.target.value;
-      setForm((prev) => ({ ...prev, [key]: value }));
-    };
+  }, [locationId, hours, vehicleType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // El fin se calcula a partir del inicio + las horas reservadas.
+      const start = new Date(startDate);
+      const end = new Date(start.getTime() + hours * 3_600_000);
       await onSubmit({
-        locationId: Number(form.locationId),
-        vehicleId: (form.vehicleId || "").trim(),
-        startDate: form.startDate,
-        endDate: form.endDate,
-        spaceCode: form.spaceCode || null,
-        totalPrice: form.totalPrice ?? null,
-        notes: form.notes || null,
+        locationId: Number(locationId),
+        vehicleId: (vehicleId || "").trim(),
+        vehicleType,
+        startDate,
+        endDate: toLocalInputValue(end),
+        spaceCode: null,
+        // El monto NO lo digita el usuario: lo calcula la tarifa × horas.
+        totalPrice: estimate ? estimate.total : null,
+        notes: notes || null,
       });
     } finally {
       setSubmitting(false);
@@ -117,8 +110,8 @@ export function ReservationForm({
       <div className="space-y-2">
         <Label htmlFor="location">Ubicación</Label>
         <Select
-          value={form.locationId ? String(form.locationId) : ""}
-          onValueChange={(value) => setForm((prev) => ({ ...prev, locationId: Number(value) }))}
+          value={locationId ? String(locationId) : ""}
+          onValueChange={(value) => setLocationId(Number(value))}
         >
           <SelectTrigger id="location">
             <SelectValue placeholder="Selecciona un parqueadero" />
@@ -132,87 +125,99 @@ export function ReservationForm({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="vehicleId">Vehículo (placa o id)</Label>
-        <Input
-          id="vehicleId"
-          value={form.vehicleId ?? ""}
-          onChange={handleChange("vehicleId")}
-          placeholder="ABC123"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="space_code">Espacio</Label>
-        <Input
-          id="space_code"
-          value={form.spaceCode ?? ""}
-          onChange={handleChange("spaceCode")}
-          placeholder="A-12"
-        />
-      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="startDate">Inicio</Label>
+          <Label htmlFor="vehicleType">Tipo de vehículo</Label>
+          <Select value={vehicleType} onValueChange={setVehicleType}>
+            <SelectTrigger id="vehicleType">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VEHICLE_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="vehicleId">Placa del vehículo</Label>
+          <Input
+            id="vehicleId"
+            value={vehicleId}
+            onChange={(e) => setVehicleId(e.target.value)}
+            placeholder="ABC123"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="startDate">Fecha y hora de inicio</Label>
           <Input
             id="startDate"
             type="datetime-local"
-            value={form.startDate}
-            onChange={handleChange("startDate")}
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="endDate">Fin</Label>
+          <Label htmlFor="hours">Horas a reservar</Label>
           <Input
-            id="endDate"
-            type="datetime-local"
-            value={form.endDate}
-            onChange={handleChange("endDate")}
+            id="hours"
+            type="number"
+            min="1"
+            step="1"
+            value={hours}
+            onChange={(e) => setHours(Math.max(1, Number(e.target.value) || 1))}
             required
           />
         </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="totalPrice">Monto (opcional)</Label>
-        <Input
-          id="totalPrice"
-          type="number"
-          min="0"
-          step="100"
-          value={form.totalPrice ?? 0}
-          onChange={handleChange("totalPrice")}
-        />
-        {estimate && (
-          <p className="text-xs text-muted-foreground">
-            Estimado: <span className="font-medium text-foreground">${estimate.total.toLocaleString("es-CO")} {estimate.currency}</span>{" "}
-            ({estimate.units} {estimate.unit === "hour" ? "h" : "día(s)"} × ${estimate.unitPrice.toLocaleString("es-CO")})
-            {" "}·{" "}
-            <button
-              type="button"
-              className="underline hover:text-primary"
-              onClick={() => setForm((prev) => ({ ...prev, totalPrice: estimate.total }))}
-            >
-              usar este monto
-            </button>
+
+      {/* Total calculado (solo lectura): tarifa × horas */}
+      <div className="rounded-md border bg-muted/40 p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Total de la reserva</span>
+          <span className="text-2xl font-bold">
+            {estimate ? `$${estimate.total.toLocaleString("es-CO")}` : "—"}
+            {estimate && <span className="text-sm font-normal text-muted-foreground ml-1">{estimate.currency}</span>}
+          </span>
+        </div>
+        {estimate ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {estimate.units} {estimate.unit === "hour" ? "hora(s)" : "día(s)"} ×
+            ${estimate.unitPrice.toLocaleString("es-CO")} ({estimate.rateName})
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Selecciona ubicación, tipo de vehículo y horas para calcular el total.
           </p>
         )}
+        <p className="mt-2 text-xs text-muted-foreground border-t pt-2">
+          Este valor corresponde a las horas reservadas. Si el vehículo permanece más
+          tiempo, el excedente se cobrará a la salida.
+        </p>
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="notes">Notas</Label>
+        <Label htmlFor="notes">Notas (opcional)</Label>
         <Input
           id="notes"
-          value={form.notes ?? ""}
-          onChange={handleChange("notes")}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
           placeholder="Observaciones"
         />
       </div>
+
       <div className="flex justify-end gap-2">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
             Cancelar
           </Button>
         )}
-        <Button type="submit" disabled={submitting || !form.locationId}>
+        <Button type="submit" disabled={submitting || !locationId}>
           {initialData ? "Guardar cambios" : "Crear reserva"}
         </Button>
       </div>

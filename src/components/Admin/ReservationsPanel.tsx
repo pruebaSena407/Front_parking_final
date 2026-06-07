@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Edit, Trash2, ListChecks } from "lucide-react";
 import reservationService, { type Reservation } from "@/services/reservationService";
 import { ReservationForm, type ReservationFormData } from "@/components/Reservations/ReservationForm";
@@ -78,9 +80,17 @@ export function ReservationsPanel() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-sm text-muted-foreground py-8 text-center">Cargando...</div>
+          <div className="space-y-2 py-2">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
         ) : items.length === 0 ? (
-          <div className="text-sm text-muted-foreground py-8 text-center">No hay reservas registradas.</div>
+          <EmptyState
+            icon={ListChecks}
+            title="No hay reservas registradas"
+            description="Cuando los clientes hagan reservas, aparecerán aquí."
+          />
         ) : (
           <div className="rounded-md border overflow-x-auto">
             <Table>
@@ -97,8 +107,13 @@ export function ReservationsPanel() {
               <TableBody>
                 {items.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.userId}</TableCell>
-                    <TableCell>#{r.locationId}</TableCell>
+                    <TableCell className="font-medium">
+                      {r.userName || `Cliente #${r.userId}`}
+                      {r.vehiclePlate && (
+                        <span className="block text-xs text-muted-foreground">{r.vehiclePlate}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{r.locationName || `#${r.locationId}`}</TableCell>
                     <TableCell>{new Date(r.startDate).toLocaleString()}</TableCell>
                     <TableCell>{new Date(r.endDate).toLocaleString()}</TableCell>
                     <TableCell className="capitalize">{r.status}</TableCell>

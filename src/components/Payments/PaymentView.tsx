@@ -13,8 +13,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 
-import paymentService, { type Payment } from "@/services/paymentService";
+import paymentService, { type Payment, type Receipt } from "@/services/paymentService";
 import reservationService, { type Reservation } from "@/services/reservationService";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -86,6 +88,8 @@ export function PaymentView() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(paymentSchema),
@@ -138,21 +142,39 @@ export function PaymentView() {
   }, [selectedReservation, form]);
 
   const handleSubmit = async (values: FormValues) => {
+    if (submitting) return; // anti doble-submit
+    setSubmitting(true);
     try {
-      await paymentService.createPayment({
+      const payment = await paymentService.createPayment({
         reservationId: values.reservationId,
         amount: values.amount,
         method: values.paymentMethod,
+        cardNumber: values.cardNumber,
+        cardName: values.cardName,
       });
       toast({ title: "Pago procesado", description: "El pago ha sido registrado correctamente." });
+      // Mostramos el comprobante devuelto por el backend.
+      if (payment.receipt) {
+        setReceipt(payment.receipt);
+      } else {
+        try {
+          setReceipt(await paymentService.getReceipt(payment.id));
+        } catch {
+          /* sin comprobante, ignoramos */
+        }
+      }
       form.reset({ reservationId: 0, amount: 0, paymentMethod: "credit_card" });
       await loadAll();
       setTab("history");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "No se pudo procesar el pago";
       toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  const printReceipt = () => window.print();
 
   const myPayments = useMemo(() => {
     if (!user) return payments;
@@ -323,9 +345,9 @@ export function PaymentView() {
                 </div>
 
                 <div className="hidden md:flex justify-end">
-                  <Button type="submit" size="lg">
+                  <Button type="submit" size="lg" disabled={submitting}>
                     <CreditCard className="mr-2 h-4 w-4" />
-                    Procesar Pago
+                    {submitting ? "Procesando..." : "Procesar Pago"}
                   </Button>
                 </div>
               </form>
@@ -334,9 +356,9 @@ export function PaymentView() {
               className="md:hidden sticky bottom-0 bg-white border-t p-3 flex justify-end"
               style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
             >
-              <Button type="submit" size="lg" form="payment-form" className="w-full">
+              <Button type="submit" size="lg" form="payment-form" className="w-full" disabled={submitting}>
                 <CreditCard className="mr-2 h-4 w-4" />
-                Procesar Pago
+                {submitting ? "Procesando..." : "Procesar Pago"}
               </Button>
             </div>
             <CardFooter className="flex justify-between border-t pt-6">
@@ -418,6 +440,70 @@ export function PaymentView() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Comprobante de pago */}
+      <Dialog open={!!receipt} onOpenChange={(open) => !open && setReceipt(null)}>
+        <DialogContent className="max-w-md print:shadow-none" id="receipt-printable">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-primary" />
+              Comprobante de pago
+            </DialogTitle>
+          </DialogHeader>
+          {receipt && (
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">N.º de comprobante</span>
+                <span className="font-mono font-medium">{receipt.receiptNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Fecha</span>
+                <span>{receipt.issuedAt ? new Date(receipt.issuedAt).toLocaleString("es-CO") : "-"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Monto</span>
+                <span className="font-semibold">${receipt.amount.toLocaleString("es-CO")} {receipt.currency}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Método</span>
+                <span>{METHOD_LABELS[receipt.method] ?? receipt.method}{receipt.cardLast4 ? ` ••••${receipt.cardLast4}` : ""}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Estado</span>
+                <span>{statusBadge(receipt.status)}</span>
+              </div>
+              {receipt.payer && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Pagador</span>
+                  <span>{receipt.payer.name || receipt.payer.email}</span>
+                </div>
+              )}
+              {receipt.reservation && (
+                <div className="border-t pt-2">
+                  <p className="text-muted-foreground mb-1">Reserva</p>
+                  <p className="font-medium">
+                    #{receipt.reservation.id} — {receipt.reservation.locationName ?? "Ubicación"}
+                    {receipt.reservation.spaceCode ? ` · Espacio ${receipt.reservation.spaceCode}` : ""}
+                  </p>
+                  {receipt.reservation.startDate && (
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(receipt.reservation.startDate).toLocaleString("es-CO")} →{" "}
+                      {receipt.reservation.endDate ? new Date(receipt.reservation.endDate).toLocaleString("es-CO") : ""}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter className="print:hidden">
+            <Button variant="outline" onClick={() => setReceipt(null)}>Cerrar</Button>
+            <Button onClick={printReceipt}>
+              <Receipt className="mr-2 h-4 w-4" />
+              Imprimir / Descargar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -57,7 +57,7 @@ export function ReservationHistory() {
               <TableBody>
                 {history.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">#{r.locationId}</TableCell>
+                    <TableCell className="font-medium">{r.locationName || `#${r.locationId}`}</TableCell>
                     <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(r.startDate).toLocaleString()}</TableCell>
                     <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">{new Date(r.endDate).toLocaleString()}</TableCell>
                     <TableCell className="hidden sm:table-cell">

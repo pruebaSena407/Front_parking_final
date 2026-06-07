@@ -7,6 +7,7 @@ import { ParkingLocationsPanel } from "@/components/Admin/ParkingLocationsPanel"
 import { ParkingRatesPanel } from "@/components/Admin/ParkingRatesPanel";
 import { ReservationsPanel } from "@/components/Admin/ReservationsPanel";
 import { UserManagementPanel } from "@/components/Admin/UserManagementPanel";
+import { OperationPanel } from "@/components/Operation/OperationPanel";
 import statsService, {
   type OverviewStats,
   type OccupancyEntry,
@@ -124,8 +125,9 @@ export const EmployeeDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="overview">Vista General</TabsTrigger>
+          <TabsTrigger value="operation">Operación</TabsTrigger>
           <TabsTrigger value="reservations">Reservas</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">Usuarios</TabsTrigger>}
           {isAdmin && <TabsTrigger value="locations">Ubicaciones</TabsTrigger>}
@@ -167,6 +169,10 @@ export const EmployeeDashboard = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="operation">
+          <OperationPanel />
         </TabsContent>
 
         <TabsContent value="reservations">

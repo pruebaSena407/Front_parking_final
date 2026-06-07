@@ -23,9 +23,45 @@ export interface CreateRateRequest {
   locationId?: number | null;
 }
 
+export interface PublicRate {
+  id: number;
+  name: string;
+  vehicleType: VehicleType;
+  hourlyRate: number;
+  dailyRate: number;
+  monthlyRate: number | null;
+  currency: string;
+}
+
+export interface Quote {
+  rateId: number;
+  rateName: string;
+  vehicleType: string;
+  currency: string;
+  hours: number;
+  unit: 'hour' | 'day';
+  units: number;
+  unitPrice: number;
+  total: number;
+}
+
 class RateService {
   async getRates(): Promise<Rate[]> {
     return apiRequest<Rate[]>('/rates/', { method: 'GET' });
+  }
+
+  /** Tarifas públicas para la landing (no requiere sesión). */
+  async getPublicRates(): Promise<PublicRate[]> {
+    return apiRequest<PublicRate[]>('/rates/public', { method: 'GET' });
+  }
+
+  /** Estimado de cobro según ubicación, tipo de vehículo y horas. */
+  async getQuote(params: { locationId?: number; vehicleType?: string; hours?: number }): Promise<Quote> {
+    const qs = new URLSearchParams();
+    if (params.locationId != null) qs.set('locationId', String(params.locationId));
+    if (params.vehicleType) qs.set('vehicleType', params.vehicleType);
+    if (params.hours != null) qs.set('hours', String(params.hours));
+    return apiRequest<Quote>(`/rates/quote?${qs.toString()}`, { method: 'GET' });
   }
 
   async getRate(id: number): Promise<Rate> {

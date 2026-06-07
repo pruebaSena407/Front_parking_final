@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Car, Menu, X, BarChart3, Settings, LogOut, User, Accessibility } from "lucide-react";
+import { Car, Menu, X, BarChart3, Settings, LogOut, User, Accessibility, Moon, Sun } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -18,10 +19,11 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, userRole, signOut } = useAuth();
   const location = useLocation();
-  const { 
+  const {
     isEnabled: a11yEnabled, toggle: toggleA11y, enable: enableA11y,
     highContrast, dyslexiaFont, underlineLinks, extraSpacing, compactMobile, setOption
   } = useAccessibility();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const handleInPageNav = (e: React.MouseEvent, id: string) => {
     if (location.pathname === "/") {
@@ -121,6 +123,17 @@ const Navbar = () => {
                 </Button>
               </div>
             )}
+            {/* Toggle de tema claro/oscuro (desktop) */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-3"
+              onClick={toggleTheme}
+              aria-label="Cambiar tema claro/oscuro"
+              title="Cambiar tema"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             {/* Botón de Accesibilidad (desktop) con menú de opciones */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

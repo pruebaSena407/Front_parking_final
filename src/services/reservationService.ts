@@ -21,6 +21,10 @@ export interface Reservation {
   notes?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  /** Campos expandidos que devuelve el backend para mostrar nombres, no IDs. */
+  userName?: string | null;
+  locationName?: string | null;
+  vehiclePlate?: string | null;
 }
 
 // Datos que mandamos para CREAR una reserva

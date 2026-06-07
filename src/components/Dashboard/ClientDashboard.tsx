@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, MapPin, CreditCard, Clock } from "lucide-react";
+import { Car, MapPin, CreditCard, Clock, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReservationsList } from "@/components/Reservations/ReservationsList";
 import { ReservationHistory } from "@/components/Reservations/ReservationHistory";
 import reservationService, { type Reservation } from "@/services/reservationService";
+import frequentUserService, { type FrequentStatus } from "@/services/frequentUserService";
 
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat("es-CO", {
@@ -18,6 +20,11 @@ export const ClientDashboard = () => {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [frequent, setFrequent] = useState<FrequentStatus | null>(null);
+
+  useEffect(() => {
+    frequentUserService.getMe().then(setFrequent).catch(() => setFrequent(null));
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -70,7 +77,14 @@ export const ClientDashboard = () => {
   return (
     <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">Panel de Cliente</h1>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold">Panel de Cliente</h1>
+          {frequent?.isFrequent && (
+            <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+              <Star className="h-3 w-3 mr-1" /> Cliente frecuente · {frequent.discount}% dto.
+            </Badge>
+          )}
+        </div>
         <p className="text-muted-foreground">Bienvenido, gestiona tus reservas y pagos</p>
       </div>
 

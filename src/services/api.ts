@@ -87,6 +87,19 @@ async function apiRequest<T>(
       if (isDev) {
         console.error(`[API] Error:`, errorMsg);
       }
+
+      // 401 = sesión inválida o expirada. Limpiamos el token y, si no
+      // estamos ya en la pantalla de auth ni validando la sesión, redirigimos.
+      // (La validación de /auth/validate maneja su propio 401 sin redirigir.)
+      if (response.status === 401 && !endpoint.startsWith('/auth/')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('mockAuth');
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+          window.location.assign('/auth');
+        }
+      }
+
       // Lanzamos el error para que el componente que llamó pueda atraparlo.
       throw new Error(errorMsg);
     }

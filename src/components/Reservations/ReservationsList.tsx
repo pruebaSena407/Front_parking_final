@@ -132,7 +132,7 @@ export function ReservationsList() {
               <TableBody>
                 {activeReservations.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">#{r.locationId}</TableCell>
+                    <TableCell className="font-medium">{r.locationName || `#${r.locationId}`}</TableCell>
                     <TableCell className="whitespace-nowrap text-xs sm:text-sm">{new Date(r.startDate).toLocaleString()}</TableCell>
                     <TableCell className="hidden md:table-cell whitespace-nowrap text-sm">{new Date(r.endDate).toLocaleString()}</TableCell>
                     <TableCell className="capitalize">{r.status}</TableCell>
@@ -155,7 +155,7 @@ export function ReservationsList() {
             {activeReservations.map((r) => (
               <div key={r.id} className="border rounded-md p-3">
                 <div className="flex items-center justify-between">
-                  <div className="font-medium">Ubicación #{r.locationId}</div>
+                  <div className="font-medium">{r.locationName || `Ubicación #${r.locationId}`}</div>
                   <div className="text-xs text-muted-foreground capitalize">{r.status}</div>
                 </div>
                 <div className="mt-2 text-xs text-muted-foreground">

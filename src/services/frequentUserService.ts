@@ -29,12 +29,23 @@ export interface FrequentUserResponse {
   vehicle: Record<string, unknown>;
 }
 
+export interface FrequentStatus {
+  isFrequent: boolean;
+  discount: number;
+  frequentUser?: Record<string, unknown>;
+}
+
 class FrequentUserService {
   async register(data: FrequentUserPayload): Promise<FrequentUserResponse> {
     return apiRequest<FrequentUserResponse>('/frequent-users/', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  /** Indica si el usuario autenticado es cliente frecuente y su descuento. */
+  async getMe(): Promise<FrequentStatus> {
+    return apiRequest<FrequentStatus>('/frequent-users/me', { method: 'GET' });
   }
 }
 

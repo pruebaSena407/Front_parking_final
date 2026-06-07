@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import locationService, { type Location } from "@/services/locationService";
+import rateService, { type Quote } from "@/services/rateService";
 import type { Reservation } from "@/services/reservationService";
 
 export type ReservationFormData = {
@@ -33,6 +34,7 @@ export function ReservationForm({
 }) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [estimate, setEstimate] = useState<Quote | null>(null);
 
   const [form, setForm] = useState<ReservationFormData>(() => {
     if (initialData) {
@@ -62,6 +64,29 @@ export function ReservationForm({
   useEffect(() => {
     locationService.getLocations().then(setLocations).catch(() => setLocations([]));
   }, []);
+
+  // Estimado de cobro desde la tarifa vigente (ubicación + duración).
+  useEffect(() => {
+    if (!form.locationId || !form.startDate || !form.endDate) {
+      setEstimate(null);
+      return;
+    }
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+    const hours = (end.getTime() - start.getTime()) / 3_600_000;
+    if (!(hours > 0)) {
+      setEstimate(null);
+      return;
+    }
+    let cancelled = false;
+    rateService
+      .getQuote({ locationId: Number(form.locationId), hours })
+      .then((q) => !cancelled && setEstimate(q))
+      .catch(() => !cancelled && setEstimate(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [form.locationId, form.startDate, form.endDate]);
 
   const handleChange =
     (key: keyof ReservationFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,6 +182,20 @@ export function ReservationForm({
           value={form.totalPrice ?? 0}
           onChange={handleChange("totalPrice")}
         />
+        {estimate && (
+          <p className="text-xs text-muted-foreground">
+            Estimado: <span className="font-medium text-foreground">${estimate.total.toLocaleString("es-CO")} {estimate.currency}</span>{" "}
+            ({estimate.units} {estimate.unit === "hour" ? "h" : "día(s)"} × ${estimate.unitPrice.toLocaleString("es-CO")})
+            {" "}·{" "}
+            <button
+              type="button"
+              className="underline hover:text-primary"
+              onClick={() => setForm((prev) => ({ ...prev, totalPrice: estimate.total }))}
+            >
+              usar este monto
+            </button>
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="notes">Notas</Label>

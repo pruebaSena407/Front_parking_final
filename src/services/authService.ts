@@ -95,6 +95,24 @@ class AuthService {
     localStorage.removeItem('mockAuth');
   }
 
+  // ---- RECUPERAR CONTRASEÑA -------------------------------------------
+  // Solicita el token de recuperación. En el MVP el backend lo devuelve
+  // en la respuesta (sin servicio de email).
+  async forgotPassword(email: string): Promise<{ message: string; resetToken?: string }> {
+    return apiRequest<{ message: string; resetToken?: string }>('/auth/forgot', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  // Establece una nueva contraseña usando el token de recuperación.
+  async resetPassword(token: string, password: string): Promise<{ message: string }> {
+    return apiRequest<{ message: string }>('/auth/reset', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
+
   // ---- VALIDAR TOKEN ---------------------------------------------------
   // Le pregunta al backend si el token actual sigue siendo válido.
   // Si el token es válido devuelve los datos del usuario para que el front

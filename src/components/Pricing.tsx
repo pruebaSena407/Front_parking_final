@@ -1,9 +1,38 @@
 
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DollarSign, Clock } from "lucide-react";
+import rateService from "@/services/rateService";
+
+const formatCOP = (value: number) => `$${Math.round(value).toLocaleString("es-CO")}`;
 
 const Pricing = () => {
+  // Tarifas reales desde el backend (las más económicas vigentes). Si no hay
+  // datos o falla la llamada, se muestran valores de referencia por defecto.
+  const [hourly, setHourly] = useState("$4.000");
+  const [daily, setDaily] = useState("$15.000");
+  const [monthly, setMonthly] = useState("$280.000");
+
+  useEffect(() => {
+    rateService
+      .getPublicRates()
+      .then((rates) => {
+        if (!rates.length) return;
+        const min = (sel: (r: typeof rates[number]) => number | null) =>
+          rates.map(sel).filter((v): v is number => v != null && v > 0);
+        const h = min((r) => r.hourlyRate);
+        const d = min((r) => r.dailyRate);
+        const m = min((r) => r.monthlyRate);
+        if (h.length) setHourly(formatCOP(Math.min(...h)));
+        if (d.length) setDaily(formatCOP(Math.min(...d)));
+        if (m.length) setMonthly(formatCOP(Math.min(...m)));
+      })
+      .catch(() => {
+        /* sin conexión: mantenemos los valores de referencia */
+      });
+  }, []);
+
   return (
     <section id="tariffs" className="py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,7 +55,7 @@ const Pricing = () => {
             </CardHeader>
             <CardContent>
               <div className="text-center mb-6">
-                <span className="text-4xl font-bold text-gray-900">$4.000</span>
+                <span className="text-4xl font-bold text-gray-900">{hourly}</span>
                 <span className="text-gray-600 ml-1">/hora</span>
               </div>
               <ul className="space-y-3">
@@ -65,7 +94,7 @@ const Pricing = () => {
             </CardHeader>
             <CardContent>
               <div className="text-center mb-6">
-                <span className="text-4xl font-bold text-gray-900">$15.000</span>
+                <span className="text-4xl font-bold text-gray-900">{daily}</span>
                 <span className="text-gray-600 ml-1">/día</span>
               </div>
               <ul className="space-y-3">
@@ -112,7 +141,7 @@ const Pricing = () => {
             </CardHeader>
             <CardContent>
               <div className="text-center mb-6">
-                <span className="text-4xl font-bold text-gray-900">$280.000</span>
+                <span className="text-4xl font-bold text-gray-900">{monthly}</span>
                 <span className="text-gray-600 ml-1">/mes</span>
               </div>
               <ul className="space-y-3">

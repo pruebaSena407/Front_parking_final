@@ -17,6 +17,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"; // Sistema de r
 import { HelmetProvider } from "react-helmet-async";        // Para cambiar el <title> y meta de cada página
 import { AuthProvider } from "@/contexts/AuthContext";      // Contexto de autenticación (usuario logueado)
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext"; // Accesibilidad (modos visuales)
+import { ThemeProvider } from "@/contexts/ThemeContext";    // Tema claro/oscuro
 import ProtectedRoute from "@/components/ProtectedRoute";   // Envoltorio que protege rutas privadas
 
 // Importamos cada una de las páginas
@@ -36,6 +37,7 @@ const queryClient = new QueryClient();
 const App = () => (
   // QueryClientProvider habilita useQuery/useMutation en toda la app
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
     <TooltipProvider>
       <HelmetProvider>
         {/* Los dos Toaster permiten mostrar mensajitos flotantes */}
@@ -108,6 +110,7 @@ const App = () => (
         </BrowserRouter>
       </HelmetProvider>
     </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

@@ -27,6 +27,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { User, Building2, Lock, Mail } from "lucide-react";  // íconos
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import authService from "@/services/authService";
@@ -43,6 +44,12 @@ const Login = () => {
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
+  // Recuperación de contraseña
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [forgotStep, setForgotStep] = useState<"request" | "reset">("request");
   const [confirmPassword, setConfirmPassword] = useState("");
   // Estado de carga (para deshabilitar botones mientras procesa)
   const [isLoading, setIsLoading] = useState(false);
@@ -135,6 +142,35 @@ const Login = () => {
   };
 
   // -------------------------------------------------------------------
+  // RECUPERACIÓN DE CONTRASEÑA
+  // -------------------------------------------------------------------
+  const handleForgotRequest = async () => {
+    try {
+      const res = await authService.forgotPassword(forgotEmail);
+      // En el MVP el backend devuelve el token (sin email real).
+      if (res.resetToken) setResetToken(res.resetToken);
+      toast({ title: "Solicitud enviada", description: res.message });
+      setForgotStep("reset");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo procesar la solicitud";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      await authService.resetPassword(resetToken, resetPassword);
+      toast({ title: "Contraseña actualizada", description: "Ya puedes iniciar sesión." });
+      setForgotOpen(false);
+      setForgotEmail(""); setResetToken(""); setResetPassword("");
+      setForgotStep("request");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo actualizar la contraseña";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    }
+  };
+
+  // -------------------------------------------------------------------
   // RENDERIZADO
   // -------------------------------------------------------------------
   return (
@@ -215,9 +251,13 @@ const Login = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="password">Contraseña</Label>
-                        <a href="#" className="text-sm text-primary hover:underline">
+                        <button
+                          type="button"
+                          onClick={() => { setForgotStep("request"); setForgotOpen(true); }}
+                          className="text-sm text-primary hover:underline"
+                        >
                           ¿Olvidaste tu contraseña?
-                        </a>
+                        </button>
                       </div>
                       <p className="text-sm text-gray-700 font-semibold">Tu contraseña de acceso</p>
                       <div className="relative">
@@ -364,6 +404,65 @@ const Login = () => {
           </Card>
         </div>
       </div>
+
+      {/* Diálogo de recuperación de contraseña */}
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recuperar contraseña</DialogTitle>
+            <DialogDescription>
+              {forgotStep === "request"
+                ? "Ingresa tu correo para recibir instrucciones de recuperación."
+                : "Ingresa el token recibido y tu nueva contraseña."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {forgotStep === "request" ? (
+            <div className="space-y-3">
+              <Label htmlFor="forgotEmail">Correo</Label>
+              <Input
+                id="forgotEmail"
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="tucorreo@ejemplo.com"
+              />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="resetToken">Token</Label>
+                <Input
+                  id="resetToken"
+                  value={resetToken}
+                  onChange={(e) => setResetToken(e.target.value)}
+                  placeholder="Token de recuperación"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="resetPassword">Nueva contraseña</Label>
+                <Input
+                  id="resetPassword"
+                  type="password"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {forgotStep === "request" ? (
+              <Button onClick={handleForgotRequest} disabled={!forgotEmail}>Enviar</Button>
+            ) : (
+              <Button onClick={handleReset} disabled={!resetToken || !resetPassword}>
+                Actualizar contraseña
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

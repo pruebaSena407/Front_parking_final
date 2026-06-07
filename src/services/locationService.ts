@@ -19,7 +19,9 @@ export interface CreateLocationRequest {
 
 class LocationService {
   async getLocations(): Promise<Location[]> {
-    return apiRequest<Location[]>('/locations', {
+    // Barra final OBLIGATORIA: sin ella Flask responde un 308 y, en peticiones
+    // con token (preflight CORS), el navegador lo bloquea como "CORS error".
+    return apiRequest<Location[]>('/locations/', {
       method: 'GET',
     });
   }
@@ -31,7 +33,7 @@ class LocationService {
   }
 
   async createLocation(data: CreateLocationRequest): Promise<Location> {
-    return apiRequest<Location>('/locations', {
+    return apiRequest<Location>('/locations/', {
       method: 'POST',
       body: JSON.stringify(data),
     });

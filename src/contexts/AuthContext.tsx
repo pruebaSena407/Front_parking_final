@@ -94,13 +94,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // backend devuelve (necesario para que la sesión sobreviva a un F5).
   const validateToken = async () => {
     const profile = await authService.validateToken();
-    if (!profile) {
-      // Si el token no sirve, limpiamos todo y dejamos al usuario sin sesión.
+    if (profile === null) {
+      // El servidor RECHAZÓ el token (401): cerramos sesión.
       localStorage.removeItem("token");
       localStorage.removeItem("mockAuth");
       setUser(null);
       setUserRole(null);
-    } else {
+    } else if (profile) {
+      // Token válido: repoblamos la sesión.
       const role = (profile.id_rol as UserRole) || "cliente";
       setUser({
         id: profile.id || String(profile.id_usuario ?? ""),
@@ -109,8 +110,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       setUserRole(role);
     }
+    // profile === undefined → fallo transitorio: NO tocamos la sesión actual.
     setLoading(false);
   };
+
+  // Escucha el evento global "auth:unauthorized" (lo emite api.ts cuando un
+  // endpoint responde 401). Limpia la sesión y redirige con navegación SPA,
+  // sin recargar la página (así no se pierden los logs de la consola).
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setUser(null);
+      setUserRole(null);
+      if (!window.location.pathname.startsWith("/auth")) {
+        navigate("/auth");
+      }
+    };
+    window.addEventListener("auth:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", onUnauthorized);
+  }, [navigate]);
 
   // useEffect: se ejecuta automáticamente cuando cambia el pathname (la URL).
   // Sirve para revalidar la sesión al navegar entre páginas.

@@ -8,7 +8,7 @@
 // backend en /api/auth/*
 // =====================================================================
 
-import apiRequest from './api';
+import apiRequest, { ApiError } from './api';
 
 // Datos que mandamos al hacer login
 export interface LoginRequest {
@@ -49,10 +49,12 @@ class AuthService {
       body: JSON.stringify(credentials),
     });
     
-    // Si el backend no nos manda token (por algún motivo), generamos
-    // uno simple del lado del cliente. (Solo para que la sesión funcione
-    // en local; en producción el backend debería devolver siempre un JWT.)
-    if (!response.token && response.correo) {
+    // Guardamos SIEMPRE el JWT que devuelve el backend para enviarlo en
+    // las siguientes peticiones (Authorization: Bearer). Si por algún
+    // motivo no llega token, generamos uno legacy como respaldo local.
+    if (response.token) {
+      localStorage.setItem('token', response.token);
+    } else if (response.correo) {
       const token = btoa(`${response.correo}:${Date.now()}`);
       localStorage.setItem('token', token);
       response.token = token;
@@ -77,8 +79,10 @@ class AuthService {
       }),
     });
     
-    // Mismo "respaldo" que en login: si no llega token, generamos uno.
-    if (!response.token && response.correo) {
+    // Igual que en login: guardamos siempre el JWT real; respaldo si falta.
+    if (response.token) {
+      localStorage.setItem('token', response.token);
+    } else if (response.correo) {
       const token = btoa(`${response.correo}:${Date.now()}`);
       localStorage.setItem('token', token);
       response.token = token;
@@ -114,24 +118,30 @@ class AuthService {
   }
 
   // ---- VALIDAR TOKEN ---------------------------------------------------
-  // Le pregunta al backend si el token actual sigue siendo válido.
-  // Si el token es válido devuelve los datos del usuario para que el front
-  // pueda repoblar la sesión tras un refresh; devuelve null en caso contrario.
-  async validateToken(): Promise<LoginResponse | null> {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return null;
+  // Pregunta al backend si el token sigue siendo válido. Devuelve:
+  //   - el usuario        → token válido (repoblar sesión)
+  //   - null              → token RECHAZADO por el servidor (401): cerrar sesión
+  //   - undefined         → no se pudo validar (red caída, petición cancelada,
+  //                         error 5xx…): NO concluir que la sesión es inválida,
+  //                         para no expulsar al usuario por un fallo transitorio.
+  async validateToken(): Promise<LoginResponse | null | undefined> {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
 
+    try {
       const response = await apiRequest<LoginResponse>('/auth/validate', {
         method: 'GET',
       });
-
       const id = String(response.id_usuario ?? response.id ?? '');
       return { ...response, id };
-    } catch {
-      // Si el backend dice 401 u otro error, borramos el token roto
-      localStorage.removeItem('token');
-      return null;
+    } catch (e) {
+      // Sólo borramos el token si el servidor dijo explícitamente 401.
+      if (e instanceof ApiError && e.status === 401) {
+        localStorage.removeItem('token');
+        return null;
+      }
+      // Error transitorio (red/cancelación/5xx): mantenemos la sesión.
+      return undefined;
     }
   }
 }

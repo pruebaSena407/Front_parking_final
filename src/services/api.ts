@@ -19,6 +19,16 @@ interface RequestOptions extends RequestInit {
   timeout?: number;
 }
 
+/** Error de API que conserva el código HTTP para poder distinguir 401, 403, etc. */
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 /**
  * Hace una petición HTTP al backend. <T> es el tipo de la respuesta esperada.
  * Por ejemplo: apiRequest<Usuario[]>('/users') devolvería un array de usuarios.
@@ -88,20 +98,16 @@ async function apiRequest<T>(
         console.error(`[API] Error:`, errorMsg);
       }
 
-      // 401 = sesión inválida o expirada. Limpiamos el token y, si no
-      // estamos ya en la pantalla de auth ni validando la sesión, redirigimos.
-      // (La validación de /auth/validate maneja su propio 401 sin redirigir.)
-      if (response.status === 401 && !endpoint.startsWith('/auth/')) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('mockAuth');
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
-          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-          window.location.assign('/auth');
-        }
-      }
+      // NOTA: NO cerramos sesión automáticamente aquí. Un 401 en un endpoint
+      // de datos puede ser transitorio (carrera al arrancar, doble render de
+      // React en desarrollo, o un permiso puntual) y no debe expulsar al
+      // usuario. La validez real de la sesión la decide /auth/validate en el
+      // AuthContext. Aquí sólo propagamos el error para que el componente lo
+      // muestre (toast).
 
-      // Lanzamos el error para que el componente que llamó pueda atraparlo.
-      throw new Error(errorMsg);
+      // Lanzamos el error (con el status) para que quien llamó pueda atraparlo
+      // y distinguir 401/403/500.
+      throw new ApiError(errorMsg, response.status);
     }
 
     // Algunas respuestas (DELETE, refunds, etc.) llegan vacías (status 204

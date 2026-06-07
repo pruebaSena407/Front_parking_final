@@ -32,6 +32,19 @@ const paymentSchema = z.object({
 
 type FormValues = z.infer<typeof paymentSchema>;
 
+// Formatea el número de tarjeta agrupando de a 4 dígitos: "4242 4242 ...".
+function formatCardNumber(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 19);
+  return digits.replace(/(.{4})/g, "$1 ").trim();
+}
+
+// Formatea la expiración como MM/AA.
+function formatExpiry(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
 const METHOD_LABELS: Record<string, string> = {
   credit_card: "Tarjeta de Crédito",
   debit_card: "Tarjeta de Débito",
@@ -301,16 +314,37 @@ export function PaymentView() {
                       <div className="space-y-4 border rounded-md p-4">
                         <div className="space-y-2">
                           <Label htmlFor="cardNumber">Número de Tarjeta</Label>
-                          <Input id="cardNumber" placeholder="1234 5678 9012 3456" {...form.register("cardNumber")} />
+                          <Input
+                            id="cardNumber"
+                            placeholder="1234 5678 9012 3456"
+                            inputMode="numeric"
+                            maxLength={23}
+                            value={form.watch("cardNumber") ?? ""}
+                            onChange={(e) => form.setValue("cardNumber", formatCardNumber(e.target.value))}
+                          />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="cardExpiry">Fecha de Expiración</Label>
-                            <Input id="cardExpiry" placeholder="MM/AA" {...form.register("cardExpiry")} />
+                            <Input
+                              id="cardExpiry"
+                              placeholder="MM/AA"
+                              inputMode="numeric"
+                              maxLength={5}
+                              value={form.watch("cardExpiry") ?? ""}
+                              onChange={(e) => form.setValue("cardExpiry", formatExpiry(e.target.value))}
+                            />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="cardCvc">CVC</Label>
-                            <Input id="cardCvc" placeholder="123" {...form.register("cardCvc")} />
+                            <Input
+                              id="cardCvc"
+                              placeholder="123"
+                              inputMode="numeric"
+                              maxLength={4}
+                              value={form.watch("cardCvc") ?? ""}
+                              onChange={(e) => form.setValue("cardCvc", e.target.value.replace(/\D/g, ""))}
+                            />
                           </div>
                         </div>
                         <div className="space-y-2">

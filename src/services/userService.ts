@@ -9,6 +9,7 @@ export interface User {
   lastName: string;
   phone?: string | null;
   role: UserRole;
+  active: boolean;
   createdAt: string;
 }
 
@@ -60,8 +61,17 @@ class UserService {
     });
   }
 
-  async deleteUser(id: string): Promise<void> {
-    await apiRequest(`/users/${id}`, { method: 'DELETE' });
+  /** Eliminación lógica: desactiva el usuario (no borra el registro). */
+  async deleteUser(id: string): Promise<User> {
+    return apiRequest<User>(`/users/${id}`, { method: 'DELETE' });
+  }
+
+  /** Activa o desactiva un usuario (reactivar / eliminación lógica). */
+  async setUserActive(id: string, active: boolean): Promise<User> {
+    return apiRequest<User>(`/users/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ active }),
+    });
   }
 
   async updateUserRole(id: string, role: UserRole): Promise<User> {

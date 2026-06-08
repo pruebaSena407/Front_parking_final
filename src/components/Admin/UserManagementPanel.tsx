@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Users, Shield, User } from "lucide-react";
+import { UserPlus, Users, Shield, User, Ban, RotateCcw } from "lucide-react";
 import userService, { type User as UserProfile, type UserRole } from "@/services/userService";
 
 export function UserManagementPanel() {
@@ -81,6 +81,25 @@ export function UserManagementPanel() {
       toast({ title: "Rol actualizado", description: "El rol del usuario ha sido actualizado" });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "No se pudo actualizar el rol";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const toggleActive = async (u: UserProfile) => {
+    try {
+      setUpdating(u.id);
+      await userService.setUserActive(u.id, !u.active);
+      await fetchUsers();
+      toast({
+        title: u.active ? "Usuario desactivado" : "Usuario reactivado",
+        description: u.active
+          ? "El usuario ya no podrá iniciar sesión."
+          : "El usuario puede iniciar sesión nuevamente.",
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "No se pudo actualizar el estado";
       toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setUpdating(null);
@@ -206,13 +225,14 @@ export function UserManagementPanel() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Rol</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead>Fecha de Creación</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((u) => (
-                  <TableRow key={u.id}>
+                  <TableRow key={u.id} className={u.active ? "" : "opacity-60"}>
                     <TableCell className="font-medium">{`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>
@@ -222,23 +242,55 @@ export function UserManagementPanel() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      {u.active ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 w-fit">Activo</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="w-fit">Inactivo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-ES") : "—"}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={u.role}
-                        onValueChange={(value: UserRole) => updateUserRole(u.id, value)}
-                        disabled={updating === u.id}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cliente">Cliente</SelectItem>
-                          <SelectItem value="empleado">Empleado</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={u.role}
+                          onValueChange={(value: UserRole) => updateUserRole(u.id, value)}
+                          disabled={updating === u.id}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cliente">Cliente</SelectItem>
+                            <SelectItem value="empleado">Empleado</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {u.active ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleActive(u)}
+                            disabled={updating === u.id}
+                            title="Desactivar usuario"
+                          >
+                            <Ban className="h-4 w-4 mr-1 text-destructive" />
+                            Desactivar
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleActive(u)}
+                            disabled={updating === u.id}
+                            title="Reactivar usuario"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-1 text-primary" />
+                            Reactivar
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
